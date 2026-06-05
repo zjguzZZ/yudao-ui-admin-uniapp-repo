@@ -380,8 +380,8 @@ import {
   applyControlRules,
   createApi,
   createFormSchema,
-  getDefaultValue,
   createInitialFormData,
+  getDefaultValue,
   isRuleDisabled,
   isRuleHidden,
   normalizeRules,
@@ -410,8 +410,8 @@ import {
   FcTag,
   FcTimePicker,
   FcTitle,
-  FcTreeSelect,
   FcTransfer,
+  FcTreeSelect,
   FcUnsupported,
   FcUploader,
   FcUserSelect,
@@ -447,8 +447,8 @@ import {
   isTextareaType,
   isTimePickerType,
   isTitleType,
-  isTreeSelectType,
   isTransferType,
+  isTreeSelectType,
   isUnsupportedInteractionType,
   isUploadType,
   isUserSelectType,
@@ -491,7 +491,7 @@ const baseRules = computed(() => normalizeRules(parsedRules.value))
 const controlResult = computed(() => applyControlRules(baseRules.value, formData.value))
 const rules = computed(() => controlResult.value.rules)
 const visibleRules = computed(() => rules.value.filter(rule => !isRuleHidden(rule, fieldStates[rule.field || ''])))
-const formSchema = computed(() => createFormSchema(() => rules.value, fieldStates))
+const formSchema = computed(() => createFormSchema(() => rules.value, fieldStates, parseRules))
 
 watch(
   rules,

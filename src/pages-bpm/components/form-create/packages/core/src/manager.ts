@@ -1,13 +1,15 @@
 import type { FormSchema, FormSchemaIssue } from '@wot-ui/ui/components/wd-form/types'
 import type { FormCreateFieldState, FormCreateRule, NormalizedFormCreateRule } from '../../../types/typing'
+import type { ParseSubFormRules } from './subForm'
+import { applyControlRules } from './control'
 import { getValidateRules } from './provider'
-import { isEmptyValue, isRuleHidden, normalizeRules } from './utils'
-
-const SUB_FORM_TYPES = new Set(['group', 'Group', 'fcGroup', 'FcGroup', 'array', 'Array', 'tableForm', 'subTable', 'fcTableForm'])
+import { isSubFormRule, normalizeSubFormRules } from './subForm'
+import { isEmptyValue, isRuleHidden } from './utils'
 
 export function createFormSchema(
   rules: () => NormalizedFormCreateRule[],
   fieldStates: Record<string, FormCreateFieldState>,
+  parseSubFormRules?: ParseSubFormRules,
 ): FormSchema {
   return {
     async validate(model) {
@@ -18,7 +20,7 @@ export function createFormSchema(
         }
         const value = model[rule.field]
         if (isSubFormRule(rule)) {
-          await validateSubFormRule(rule, value, issues)
+          await validateSubFormRule(rule, value, issues, rule.field, fieldStates[rule.field], parseSubFormRules)
           continue
         }
         for (const validateRule of getValidateRules(rule, fieldStates[rule.field])) {
@@ -30,9 +32,7 @@ export function createFormSchema(
             continue
           }
           if (validateRule.pattern) {
-            const pattern = typeof validateRule.pattern === 'string'
-              ? new RegExp(validateRule.pattern)
-              : validateRule.pattern
+            const pattern = typeof validateRule.pattern === 'string' ? new RegExp(validateRule.pattern) : validateRule.pattern
             if (!pattern.test(String(value))) {
               issues.push(createIssue(rule.field, validateRule.message || `${rule.title || '该字段'}格式不正确`))
               break
@@ -55,16 +55,23 @@ export function createFormSchema(
       if (rule) {
         return getValidateRules(rule, fieldStates[rule.field]).some(item => item.required)
       }
-      const childRule = findSubFormChildRule(rules(), prop)
+      const childRule = findSubFormChildRule(rules(), prop, parseSubFormRules)
       return !!(childRule && getValidateRules(childRule).some(item => item.required))
     },
   }
 }
 
-async function validateSubFormRule(rule: NormalizedFormCreateRule, value: any, issues: FormSchemaIssue[]) {
-  for (const validateRule of getValidateRules(rule)) {
+async function validateSubFormRule(
+  rule: NormalizedFormCreateRule,
+  value: any,
+  issues: FormSchemaIssue[],
+  fieldPath: string = rule.field || '',
+  state?: FormCreateFieldState,
+  parseSubFormRules?: ParseSubFormRules,
+) {
+  for (const validateRule of getValidateRules(rule, state)) {
     if (validateRule.required && (!Array.isArray(value) || value.length === 0)) {
-      issues.push(createIssue(rule.field, validateRule.message || `${rule.title || '子表单'}不能为空`))
+      issues.push(createIssue(fieldPath, validateRule.message || `${rule.title || '子表单'}不能为空`))
       return
     }
   }
@@ -73,35 +80,40 @@ async function validateSubFormRule(rule: NormalizedFormCreateRule, value: any, i
     return
   }
 
-  const children = getSubFormChildRules(rule)
+  const children = normalizeSubFormRules(rule, parseSubFormRules)
   for (let rowIndex = 0; rowIndex < value.length; rowIndex++) {
     const row = value[rowIndex]
-    for (const childRule of children) {
-      if (!childRule.field || isRuleHidden(childRule)) {
+    const controlResult = applyControlRules(children, row || {})
+    for (const childRule of controlResult.rules) {
+      const childState = childRule.field ? controlResult.fieldStates[childRule.field] : undefined
+      if (!childRule.field || isRuleHidden(childRule, childState)) {
         continue
       }
       const childValue = row?.[childRule.field]
-      for (const validateRule of getValidateRules(childRule)) {
+      const childPath = getSubFormPath(fieldPath, rowIndex, childRule.field)
+      if (isSubFormRule(childRule)) {
+        await validateSubFormRule(childRule, childValue, issues, childPath, childState, parseSubFormRules)
+        continue
+      }
+      for (const validateRule of getValidateRules(childRule, childState)) {
         if (validateRule.required && isEmptyValue(childValue)) {
-          issues.push(createIssue(getSubFormPath(rule.field, rowIndex, childRule.field), validateRule.message || `${childRule.title || '该字段'}不能为空`))
+          issues.push(createIssue(childPath, validateRule.message || `${childRule.title || '该字段'}不能为空`))
           break
         }
         if (isEmptyValue(childValue)) {
           continue
         }
         if (validateRule.pattern) {
-          const pattern = typeof validateRule.pattern === 'string'
-            ? new RegExp(validateRule.pattern)
-            : validateRule.pattern
+          const pattern = typeof validateRule.pattern === 'string' ? new RegExp(validateRule.pattern) : validateRule.pattern
           if (!pattern.test(String(childValue))) {
-            issues.push(createIssue(getSubFormPath(rule.field, rowIndex, childRule.field), validateRule.message || `${childRule.title || '该字段'}格式不正确`))
+            issues.push(createIssue(childPath, validateRule.message || `${childRule.title || '该字段'}格式不正确`))
             break
           }
         }
         if (validateRule.validator) {
           const result = await validateRule.validator(childValue)
           if (result === false || typeof result === 'string') {
-            issues.push(createIssue(getSubFormPath(rule.field, rowIndex, childRule.field), typeof result === 'string' ? result : validateRule.message || `${childRule.title || '该字段'}校验失败`))
+            issues.push(createIssue(childPath, typeof result === 'string' ? result : validateRule.message || `${childRule.title || '该字段'}校验失败`))
             break
           }
         }
@@ -110,40 +122,48 @@ async function validateSubFormRule(rule: NormalizedFormCreateRule, value: any, i
   }
 }
 
-function isSubFormRule(rule: FormCreateRule) {
-  return SUB_FORM_TYPES.has(rule.type)
-}
-
-function getSubFormChildRules(rule: FormCreateRule) {
-  const children = rule.props?.rule || rule.children
-  if (Array.isArray(children)) {
-    return normalizeRules(children)
-  }
-  if (Array.isArray(rule.props?.columns)) {
-    const rules = rule.props.columns.flatMap((column: Record<string, any>) => Array.isArray(column.rule) ? column.rule : [])
-    return normalizeRules(rules)
-  }
-  return []
-}
-
-function findSubFormChildRule(rules: NormalizedFormCreateRule[], path: string) {
+function findSubFormChildRule(rules: NormalizedFormCreateRule[], path: string, parseSubFormRules?: ParseSubFormRules) {
   for (const rule of rules) {
     if (!rule.field || !isSubFormRule(rule)) {
       continue
     }
-    const prefix = `${rule.field}.`
-    if (!path.startsWith(prefix)) {
+    const childPath = getSubFormChildPath(path, rule.field)
+    if (!childPath) {
       continue
     }
-    const [, childField] = path.slice(prefix.length).split(/\.(.+)/)
-    if (!childField) {
-      continue
-    }
-    const childRule = getSubFormChildRules(rule).find(item => item.field === childField)
+    const childRule = findSubFormChildRuleByPath(rule, childPath, parseSubFormRules)
     if (childRule) {
       return childRule
     }
   }
+}
+
+function findSubFormChildRuleByPath(rule: FormCreateRule, childPath: string, parseSubFormRules?: ParseSubFormRules): NormalizedFormCreateRule | undefined {
+  for (const childRule of normalizeSubFormRules(rule, parseSubFormRules)) {
+    if (!childRule.field) {
+      continue
+    }
+    if (childPath === childRule.field) {
+      return childRule
+    }
+    const nestedPath = getSubFormChildPath(childPath, childRule.field)
+    if (nestedPath && isSubFormRule(childRule)) {
+      const nestedChildRule = findSubFormChildRuleByPath(childRule, nestedPath, parseSubFormRules)
+      if (nestedChildRule) {
+        return nestedChildRule
+      }
+    }
+  }
+}
+
+function getSubFormChildPath(path: string, field: string) {
+  const prefix = `${field}.`
+  if (!path.startsWith(prefix)) {
+    return undefined
+  }
+  const rest = path.slice(prefix.length)
+  const rowSeparatorIndex = rest.indexOf('.')
+  return rowSeparatorIndex >= 0 ? rest.slice(rowSeparatorIndex + 1) : undefined
 }
 
 function getSubFormPath(field: string, rowIndex: number, childField: string) {

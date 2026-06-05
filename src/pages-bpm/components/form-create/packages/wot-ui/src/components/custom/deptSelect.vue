@@ -107,9 +107,9 @@
 
 <script lang="ts" setup>
 import type { CascaderOption } from '@wot-ui/ui/components/wd-cascader/types'
-import type { Dept } from '@/api/system/dept'
 import type { NormalizedFormCreateRule } from '../../../../../types/typing'
 import type { CustomSelectOption, CustomSelectValue } from './types'
+import type { Dept } from '@/api/system/dept'
 import { computed, ref, watch } from 'vue'
 import { getSimpleDeptList } from '@/api/system/dept'
 import { getPlaceholder } from '../../core/utils'

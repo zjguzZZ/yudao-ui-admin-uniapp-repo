@@ -1,6 +1,7 @@
 export { createApi } from './api'
-export { applyControlRules } from './control'
 export { default as getConfig } from './config'
+export { applyControlRules } from './control'
 export { createFieldStates, createFormSchema } from './manager'
 export { getRequiredRule, getValidateRules } from './provider'
+export { getSubFormColumnRules, getSubFormRules, isSubFormRule, normalizeSubFormRules } from './subForm'
 export * from './utils'

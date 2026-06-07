@@ -42,7 +42,7 @@ const tabbarStore = reactive({
   curIdx: uni.getStorageSync('app-tabbar-index') || 0,
   prevIdx: uni.getStorageSync('app-tabbar-index') || 0,
   setCurIdx(idx: number) {
-    const tokenStore = useTokenStore()
+    const tokenStore = useTokenStore().updateNowTime()
     // 已登录 或 (url 需要登录 && 在白名单 || 不需要登录 && 不在黑名单) （关于 白名单|黑名单 逻辑： src/router/interceptor.ts）
     if (tokenStore.hasLogin || (isNeedLoginMode && judgeIsExcludePath(tabbarList[idx].pagePath)) || (!isNeedLoginMode && !judgeIsExcludePath(tabbarList[idx].pagePath))) {
       this.curIdx = idx

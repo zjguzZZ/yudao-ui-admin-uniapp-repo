@@ -195,7 +195,7 @@ const serverUrl = computed(() => {
   const baseUrl = getEnvBaseUrlRoot()
   const wsUrl = baseUrl.replace('http', 'ws')
   const tokenInfo = tokenStore.tokenInfo as any
-  const token = tokenInfo?.refreshToken || tokenStore.validToken
+  const token = tokenInfo?.refreshToken || tokenStore.updateNowTime().validToken
   return `${wsUrl}/infra/ws?token=${token}`
 })
 

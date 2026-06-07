@@ -9,7 +9,21 @@ import { ResultEnum } from './tools/enum'
 
 // 刷新 token 状态管理
 let refreshing = false // 防止重复刷新 token 标识
-let taskQueue: (() => void)[] = [] // 刷新 token 请求队列
+let refreshFailedReason: any = null // 刷新失败处理中的拒绝原因
+let taskQueue: RefreshTask[] = [] // 刷新 token 请求队列
+
+interface RefreshTask {
+  resolve: (value: any) => void
+  reject: (reason?: any) => void
+  options: CustomRequestOptions
+}
+
+/** 拒绝刷新 token 队列 */
+function rejectTaskQueue(reason?: any) {
+  const tasks = [...taskQueue]
+  taskQueue = []
+  tasks.forEach(task => task.reject(reason))
+}
 
 export function http<T>(options: CustomRequestOptions) {
   // 1. 返回 Promise 对象
@@ -50,44 +64,46 @@ export function http<T>(options: CustomRequestOptions) {
           }
 
           /* -------- 无感刷新 token ----------- */
+          if (refreshFailedReason) {
+            return reject(refreshFailedReason)
+          }
+
           const { refreshToken } = tokenStore.tokenInfo as IDoubleTokenRes || {}
           // token 失效的，且有刷新 token 的，才放到请求队列里
           if (refreshToken) {
-            taskQueue.push(() => {
-              resolve(http<T>(options))
+            taskQueue.push({
+              resolve,
+              reject,
+              options,
             })
           }
 
           // 如果有 refreshToken 且未在刷新中，发起刷新 token 请求
           if (refreshToken && !refreshing) {
             refreshing = true
+            refreshFailedReason = null
             try {
               // 发起刷新 token 请求（使用 store 的 refreshToken 方法）
               await tokenStore.refreshToken()
-              // 刷新 token 成功
-              refreshing = false
-              nextTick(() => {
-                // 关闭其他弹窗
-                // 注释 by 芋艿：刷新 token 成功，是后台静默操作，没必要提示用户
-                // uni.hideToast()
-                // uni.showToast({
-                //   title: 'token 刷新成功',
-                //   icon: 'none',
-                // })
-              })
               // 将任务队列的所有任务重新请求
-              taskQueue.forEach(task => task())
+              const tasks = [...taskQueue]
+              taskQueue = []
+              refreshing = false
+              tasks.forEach((task) => {
+                http(task.options).then(task.resolve).catch(task.reject)
+              })
             } catch (refreshErr) {
               console.error('刷新 token 失败:', refreshErr)
+              refreshFailedReason = refreshErr
+              rejectTaskQueue(refreshErr)
               refreshing = false
               // 刷新 token 失败，跳转到登录页
-              nextTick(() => {
-                // 关闭其他弹窗
-                uni.hideToast()
-                uni.showToast({
-                  title: '登录已过期，请重新登录',
-                  icon: 'none',
-                })
+              await nextTick()
+              // 关闭其他弹窗
+              uni.hideToast()
+              uni.showToast({
+                title: '登录已过期，请重新登录',
+                icon: 'none',
               })
               // 清除用户信息
               await tokenStore.logout()
@@ -103,12 +119,22 @@ export function http<T>(options: CustomRequestOptions) {
                 toLoginPage({ queryString })
               }, 2000)
             } finally {
+              refreshing = false
               // 不管刷新 token 成功与否，都清空任务队列
-              taskQueue = []
+              if (refreshFailedReason) {
+                rejectTaskQueue(refreshFailedReason)
+              }
+              else {
+                taskQueue = []
+              }
+              refreshFailedReason = null
             }
           }
 
-          return reject(res)
+          if (!refreshToken) {
+            return reject(res)
+          }
+          return
         }
 
         // 处理其他成功状态（HTTP状态码200-299）

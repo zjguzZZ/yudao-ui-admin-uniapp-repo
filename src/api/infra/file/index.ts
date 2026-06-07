@@ -62,6 +62,7 @@ export function deleteFile(id: number) {
 export function uploadFile(filePath: string, directory?: string): Promise<string> {
   const tokenStore = useTokenStore()
   const userStore = useUserStore()
+  const token = tokenStore.updateNowTime().validToken
   return new Promise((resolve, reject) => {
     uni.uploadFile({
       url: `${import.meta.env.VITE_SERVER_BASEURL}/infra/file/upload`,
@@ -70,7 +71,7 @@ export function uploadFile(filePath: string, directory?: string): Promise<string
       header: {
         'Accept': '*/*',
         'tenant-id': userStore.tenantId,
-        'Authorization': `Bearer ${tokenStore.validToken}`,
+        'Authorization': `Bearer ${token}`,
       },
       formData: directory ? { directory } : undefined,
       success: (res) => {

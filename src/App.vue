@@ -13,7 +13,7 @@ onShow((options) => {
   // 对应 https://t.zsxq.com/boU4A 帖子
   const tokenStore = useTokenStore()
   const dictStore = useDictStore()
-  if (tokenStore.hasLogin && !dictStore.isLoaded) {
+  if (tokenStore.updateNowTime().hasLogin && !dictStore.isLoaded) {
     void dictStore.loadDictCacheWithRetry()
   }
 

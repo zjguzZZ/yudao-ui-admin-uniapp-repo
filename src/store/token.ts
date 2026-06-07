@@ -43,8 +43,18 @@ export const useTokenStore = defineStore(
     const toast = useToast()
     // 定义用户信息
     const tokenInfo = ref<IAuthLoginRes>({ ...tokenInfoState })
+
+    const nowTime = ref(Date.now()) // 当前时间戳，用于触发 token 过期计算
+
+    /** 更新时间戳，让 token 过期计算重新执行 */
+    const updateNowTime = () => {
+      nowTime.value = Date.now()
+      return useTokenStore()
+    }
+
     // 设置用户信息
     const setTokenInfo = (val: IAuthLoginRes) => {
+      updateNowTime()
       tokenInfo.value = val
 
       // 计算并存储过期时间
@@ -72,7 +82,7 @@ export const useTokenStore = defineStore(
         return true
       }
 
-      const now = Date.now()
+      const now = nowTime.value
       const expireTime = uni.getStorageSync('accessTokenExpireTime')
 
       if (!expireTime)
@@ -206,6 +216,8 @@ export const useTokenStore = defineStore(
         console.error('退出登录失败:', error)
       }
       finally {
+        updateNowTime()
+
         // 无论成功失败，都需要清除本地token信息
         // 清除存储的过期时间
         uni.removeStorageSync('accessTokenExpireTime')
@@ -247,12 +259,16 @@ export const useTokenStore = defineStore(
         console.error('刷新token失败:', error)
         throw error
       }
+      finally {
+        updateNowTime()
+      }
     }
 
     /**
      * 获取有效的token
      * 注意：在computed中不直接调用异步函数，只做状态判断
      * 实际的刷新操作应由调用方处理
+     * 建议使用 tokenStore.updateNowTime().validToken
      */
     const getValidToken = computed(() => {
       // token已过期，返回空
@@ -285,6 +301,7 @@ export const useTokenStore = defineStore(
 
     /**
      * 检查是否已登录且token有效
+     * 建议使用 tokenStore.updateNowTime().hasLogin
      */
     const hasValidLogin = computed(() => {
       console.log('hasValidLogin', hasLoginInfo.value, !isTokenExpired.value)
@@ -302,6 +319,7 @@ export const useTokenStore = defineStore(
      * @returns 有效的token或空字符串
      */
     const tryGetValidToken = async (): Promise<string> => {
+      updateNowTime()
       if (!getValidToken.value && isDoubleTokenMode && !isRefreshTokenExpired.value) {
         try {
           await refreshToken()
@@ -332,6 +350,7 @@ export const useTokenStore = defineStore(
       // 调试或特殊场景可能需要直接访问的信息
       tokenInfo,
       setTokenInfo,
+      updateNowTime,
     }
   },
   {

@@ -42,12 +42,14 @@ if (!fs.existsSync(srcDir)) {
   fs.mkdirSync(srcDir, { recursive: true })
 }
 
-// 如果 src/manifest.json 不存在，就创建它；存在就不处理，以免覆盖
-if (!fs.existsSync(manifestPath) || fs.statSync(manifestPath).size === 0) {
+const MIN_SIZE = `{ }`.length // 只有空对象时需要重新生成
+
+// 如果 src/manifest.json 不存在，或者只有空对象，就重新创建
+if (!fs.existsSync(manifestPath) || fs.statSync(manifestPath).size <= MIN_SIZE) {
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
 }
 
-// 如果 src/pages.json 不存在，就创建它；存在就不处理，以免覆盖
-if (!fs.existsSync(pagesPath) || fs.statSync(pagesPath).size === 0) {
+// 如果 src/pages.json 不存在，或者只有空对象，就重新创建
+if (!fs.existsSync(pagesPath) || fs.statSync(pagesPath).size <= MIN_SIZE) {
   fs.writeFileSync(pagesPath, JSON.stringify(pages, null, 2))
 }

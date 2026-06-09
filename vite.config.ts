@@ -30,6 +30,7 @@ import vitePluginEruda from './scripts/vite-plugin-eruda'
 import { createCopyNativeResourcesPlugin } from './vite-plugins/copy-native-resources'
 import syncManifestPlugin from './vite-plugins/sync-manifest-plugins'
 
+/** 标准的 wot-ui 组件的解析器 */
 function WotResolver(): ComponentResolver {
   return {
     type: 'component',
@@ -39,6 +40,22 @@ function WotResolver(): ComponentResolver {
         return {
           name,
           from: `@wot-ui/ui/components/${compName}/${compName}.vue`,
+        }
+      }
+    },
+  }
+}
+
+/** 芋道 UI 组件解析器：本地 @/components/yudao-ui/* 的组件 */
+function YudaoUiResolver(): ComponentResolver {
+  return {
+    type: 'component',
+    resolve: (name: string) => {
+      if (name.match(/^Yd[A-Z]/)) {
+        const compName = kebabCase(name)
+        return {
+          name,
+          from: `@/components/yudao-ui/${compName}/${compName}.vue`,
         }
       }
     },
@@ -90,7 +107,7 @@ export default defineConfig(({ command, mode }) => {
       UniPlatform(),
       UniManifest(),
       UniComponents({
-        resolvers: [WotResolver()],
+        resolvers: [WotResolver(), YudaoUiResolver()],
         extensions: ['vue'],
         deep: true, // 是否递归扫描子目录，
         directoryAsNamespace: false, // 是否把目录名作为命名空间前缀，true 时组件名为 目录名+组件名，
@@ -142,8 +159,8 @@ export default defineConfig(({ command, mode }) => {
         vueTemplate: true, // default false
       }),
       ViteRestart({
-        // 通过这个插件，在修改vite.config.js文件则不需要重新运行也生效配置
-        restart: ['vite.config.js'],
+        // 通过这个插件，在修改vite配置文件则不需要重新运行也生效配置
+        restart: ['vite.config.js', 'vite.config.ts'],
       }),
       // h5环境增加 BUILD_TIME 和 BUILD_BRANCH
       UNI_PLATFORM === 'h5' && {

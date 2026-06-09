@@ -18,6 +18,21 @@
               placeholder="请输入套餐名称"
             />
           </wd-form-item>
+          <yd-tree-select
+            ref="menuTreeRef"
+            v-model="formData.menuIds"
+            label="菜单权限"
+            title="菜单权限"
+            prop="menuIds"
+            label-width="200rpx"
+            placeholder="请选择菜单权限"
+            :data="menuOptions"
+            :props="menuTreeProps"
+            :check-strictly="false"
+            show-checkbox
+            show-toolbar
+            filterable
+          />
           <wd-form-item title="状态" title-width="200rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" type="button">
               <wd-radio
@@ -56,13 +71,17 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { Menu } from '@/api/system/menu'
 import type { TenantPackage } from '@/api/system/tenant/package'
+import type YdTreeSelect from '@/components/yudao-ui/yd-tree-select/yd-tree-select.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
+import { getSimpleMenuList } from '@/api/system/menu'
 import { createTenantPackage, getTenantPackage, updateTenantPackage } from '@/api/system/tenant/package'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { handleTree } from '@/utils/tree'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
@@ -88,9 +107,17 @@ const formData = ref<TenantPackage>({
 }) // 表单数据
 const formSchema = createFormSchema({
   name: [{ required: true, message: '套餐名称不能为空' }],
+  menuIds: [{ required: true, message: '菜单权限不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
+const menuTreeRef = ref<InstanceType<typeof YdTreeSelect>>() // 菜单树组件引用
+const menuOptions = ref<Menu[]>([]) // 菜单树形结构
+const menuTreeProps = {
+  children: 'children',
+  label: 'name',
+  value: 'id',
+}
 
 /** 返回上一页 */
 function handleBack() {
@@ -114,11 +141,17 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
+    const checkedKeys = menuTreeRef.value?.getCheckedKeys(false) || formData.value.menuIds // 获得当前选中节点
+    const halfCheckedKeys = menuTreeRef.value?.getHalfCheckedKeys() || [] // 获得半选中的父节点
+    const data = {
+      ...formData.value,
+      menuIds: Array.from(new Set([...checkedKeys, ...halfCheckedKeys])).map(Number),
+    }
     if (props.id) {
-      await updateTenantPackage(formData.value)
+      await updateTenantPackage(data)
       toast.success('修改成功')
     } else {
-      await createTenantPackage(formData.value)
+      await createTenantPackage(data)
       toast.success('新增成功')
     }
     setTimeout(() => {
@@ -130,9 +163,11 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-// TODO @芋艿：这里有个租户套餐的设置；只支持 pc 操作；
-onMounted(() => {
-  getDetail()
+onMounted(async () => {
+  // 加载菜单树，便于编辑页回显权限名称
+  menuOptions.value = handleTree(await getSimpleMenuList())
+  // 加载详情数据
+  await getDetail()
 })
 </script>
 

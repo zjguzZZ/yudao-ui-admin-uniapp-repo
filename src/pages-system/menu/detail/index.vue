@@ -82,7 +82,7 @@ const toast = useToast()
 const dialog = useDialog()
 const formData = ref<Menu>() // 详情数据
 const deleting = ref(false) // 删除状态
-const parentMenuName = ref('-')
+const parentMenuName = ref('-') // 上级菜单名称链
 
 /** 返回上一页 */
 function handleBack() {
@@ -97,18 +97,43 @@ async function getDetail() {
   toast.loading('加载中...')
   try {
     formData.value = await getMenu(props.id)
-    // 获取上级菜单名称
-    if (formData.value?.parentId === 0) {
+    const parentId = formData.value?.parentId
+    if (parentId === 0) {
       parentMenuName.value = '主类目'
-    } else if (formData.value?.parentId) {
-      // TODO @AI：改成链式的父菜单名字
+    } else if (parentId) {
       const menuList = await getSimpleMenuList()
-      const parent = menuList.find(item => item.id === formData.value?.parentId)
-      parentMenuName.value = parent?.name || '-'
+      parentMenuName.value = getParentMenuName(menuList, parentId)
+    } else {
+      parentMenuName.value = '-'
     }
   } finally {
     toast.close()
   }
+}
+
+/** 获取父菜单名称链 */
+function getParentMenuName(menuList: Menu[], parentId: number) {
+  const menuMap = new Map<number, Menu>()
+  menuList.forEach((item) => {
+    if (item.id !== undefined) {
+      menuMap.set(item.id, item)
+    }
+  })
+
+  // 通过 parentId 逐级查找父菜单，构建名称链
+  const names: string[] = []
+  const visitedIds = new Set<number>()
+  let currentParentId = parentId
+  while (currentParentId && !visitedIds.has(currentParentId)) {
+    visitedIds.add(currentParentId)
+    const parent = menuMap.get(currentParentId)
+    if (!parent) {
+      break
+    }
+    names.unshift(parent.name)
+    currentParentId = parent.parentId
+  }
+  return names.length > 0 ? names.join(' / ') : '-'
 }
 
 /** 编辑菜单 */

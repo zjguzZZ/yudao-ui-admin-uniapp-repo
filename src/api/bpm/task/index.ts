@@ -3,7 +3,6 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** 任务处理人 */
-// TODO @芋艿：貌似暂时不需要这个？！
 export interface TaskUser {
   id: number
   nickname: string

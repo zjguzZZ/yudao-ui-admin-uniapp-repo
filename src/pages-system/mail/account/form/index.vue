@@ -70,7 +70,6 @@
     </view>
 
     <!-- 底部保存按钮 -->
-    <!-- TODO @芋艿： -->
     <view class="yd-detail-footer">
       <wd-button
         type="primary"

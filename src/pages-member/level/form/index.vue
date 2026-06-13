@@ -1,0 +1,195 @@
+<template>
+  <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
+    <wd-navbar
+      :title="getTitle"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+    />
+
+    <!-- 表单区域 -->
+    <view>
+      <wd-form ref="formRef" :model="formData" :schema="formSchema">
+        <wd-cell-group border>
+          <wd-form-item title="等级名称" title-width="200rpx" prop="name">
+            <wd-input v-model="formData.name" clearable placeholder="请输入等级名称" />
+          </wd-form-item>
+          <wd-form-item title="等级" title-width="200rpx" prop="level">
+            <wd-input v-model.number="formData.level" type="number" clearable placeholder="请输入等级" />
+          </wd-form-item>
+          <wd-form-item title="升级经验" title-width="200rpx" prop="experience">
+            <wd-input v-model.number="formData.experience" type="number" clearable placeholder="请输入升级经验" />
+          </wd-form-item>
+          <wd-form-item title="享受折扣" title-width="200rpx" prop="discountPercent">
+            <wd-input v-model.number="formData.discountPercent" type="number" clearable placeholder="请输入享受折扣" />
+          </wd-form-item>
+          <wd-form-item title="等级图标" title-width="200rpx" prop="icon">
+            <view class="flex items-center gap-16rpx">
+              <wd-img
+                v-if="formData.icon"
+                :src="formData.icon"
+                :width="48"
+                :height="48"
+                mode="aspectFill"
+                round
+              />
+              <text v-else class="text-26rpx text-[#999]">未上传</text>
+              <wd-button size="small" type="primary" variant="plain" :loading="uploading.icon" @click="handleChooseImage('icon')">
+                上传
+              </wd-button>
+            </view>
+          </wd-form-item>
+          <wd-form-item title="背景图" title-width="200rpx" prop="backgroundUrl">
+            <view class="flex items-center gap-16rpx">
+              <wd-img
+                v-if="formData.backgroundUrl"
+                :src="formData.backgroundUrl"
+                :width="64"
+                :height="40"
+                mode="aspectFill"
+              />
+              <text v-else class="text-26rpx text-[#999]">未上传</text>
+              <wd-button size="small" type="primary" variant="plain" :loading="uploading.backgroundUrl" @click="handleChooseImage('backgroundUrl')">
+                上传
+              </wd-button>
+            </view>
+          </wd-form-item>
+          <wd-form-item title="状态" title-width="200rpx" prop="status" center>
+            <wd-radio-group v-model="formData.status" type="button">
+              <wd-radio
+                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+                :key="dict.value"
+                :value="dict.value"
+              >
+                {{ dict.label }}
+              </wd-radio>
+            </wd-radio-group>
+          </wd-form-item>
+        </wd-cell-group>
+      </wd-form>
+    </view>
+
+    <!-- 底部保存按钮 -->
+    <view class="yd-detail-footer">
+      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+        保存
+      </wd-button>
+    </view>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { MemberLevel } from '@/api/member/level'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { computed, onMounted, ref } from 'vue'
+import { createMemberLevel, getMemberLevel, updateMemberLevel } from '@/api/member/level'
+import { uploadFile } from '@/api/infra/file'
+import { getIntDictOptions } from '@/hooks/useDict'
+import { navigateBackPlus } from '@/utils'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { createFormSchema } from '@/utils/wot'
+
+type ImageField = 'backgroundUrl' | 'icon'
+
+const props = defineProps<{
+  id?: number | any
+}>()
+
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
+const toast = useToast()
+const getTitle = computed(() => props.id ? '编辑会员等级' : '新增会员等级')
+const formLoading = ref(false) // 表单提交状态
+const uploading = ref<Record<ImageField, boolean>>({
+  icon: false,
+  backgroundUrl: false,
+}) // 图片上传状态
+const formData = ref<MemberLevel>({
+  id: undefined,
+  name: '',
+  level: 0,
+  experience: 0,
+  discountPercent: 100,
+  icon: '',
+  backgroundUrl: '',
+  status: CommonStatusEnum.ENABLE,
+}) // 表单数据
+const formSchema = createFormSchema({
+  name: [{ required: true, message: '等级名称不能为空' }],
+  level: [{ required: true, message: '等级不能为空' }],
+  experience: [{ required: true, message: '升级经验不能为空' }],
+  discountPercent: [{ required: true, message: '享受折扣不能为空' }],
+  status: [{ required: true, message: '状态不能为空' }],
+})
+const formRef = ref<FormInstance>() // 表单组件引用
+
+/** 返回上一页 */
+function handleBack() {
+  navigateBackPlus('/pages-member/level/index')
+}
+
+/** 加载等级详情 */
+async function getDetail() {
+  if (!props.id) {
+    return
+  }
+  formData.value = await getMemberLevel(Number(props.id))
+}
+
+/** 选择并上传图片 */
+function handleChooseImage(field: ImageField) {
+  uni.chooseImage({
+    count: 1,
+    success: async (res) => {
+      const filePath = res.tempFilePaths?.[0]
+      if (!filePath) {
+        return
+      }
+      uploading.value[field] = true
+      try {
+        formData.value[field] = await uploadFile(filePath, 'member-level')
+      } finally {
+        uploading.value[field] = false
+      }
+    },
+  })
+}
+
+/** 提交表单 */
+async function handleSubmit() {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
+    return
+  }
+
+  formLoading.value = true
+  try {
+    if (props.id) {
+      await updateMemberLevel(formData.value)
+      toast.success('修改成功')
+    } else {
+      await createMemberLevel(formData.value)
+      toast.success('新增成功')
+    }
+    setTimeout(() => {
+      handleBack()
+    }, 500)
+  } finally {
+    formLoading.value = false
+  }
+}
+
+/** 初始化 */
+onMounted(() => {
+  getDetail()
+})
+</script>
+
+<style lang="scss" scoped>
+</style>

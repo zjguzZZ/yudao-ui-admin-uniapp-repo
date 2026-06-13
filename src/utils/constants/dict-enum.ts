@@ -52,8 +52,156 @@ const BPM_DICT = {
   BPM_TASK_STATUS: 'bpm_task_status', // BPM 任务状态
 } as const
 
+/** ========== CRM - 客户管理模块 ========== */
+const CRM_DICT = {
+  CRM_AUDIT_STATUS: 'crm_audit_status', // CRM 审批状态
+  CRM_BIZ_TYPE: 'crm_biz_type', // CRM 业务类型
+  CRM_BUSINESS_END_STATUS_TYPE: 'crm_business_end_status_type', // CRM 商机结束状态类型
+  CRM_RECEIVABLE_RETURN_TYPE: 'crm_receivable_return_type', // CRM 回款方式
+  CRM_CUSTOMER_INDUSTRY: 'crm_customer_industry', // CRM 客户所属行业
+  CRM_CUSTOMER_LEVEL: 'crm_customer_level', // CRM 客户级别
+  CRM_CUSTOMER_SOURCE: 'crm_customer_source', // CRM 客户来源
+  CRM_PRODUCT_STATUS: 'crm_product_status', // CRM 产品状态
+  CRM_PERMISSION_LEVEL: 'crm_permission_level', // CRM 数据权限级别
+  CRM_PRODUCT_UNIT: 'crm_product_unit', // CRM 产品单位
+  CRM_FOLLOW_UP_TYPE: 'crm_follow_up_type', // CRM 跟进方式
+} as const
+
+/** ========== ERP - 企业资源计划模块 ========== */
+const ERP_DICT = {
+  ERP_AUDIT_STATUS: 'erp_audit_status', // ERP 审批状态
+  ERP_STOCK_RECORD_BIZ_TYPE: 'erp_stock_record_biz_type', // ERP 库存明细业务类型
+} as const
+
+/** ========== MEMBER - 会员模块 ========== */
+const MEMBER_DICT = {
+  MEMBER_POINT_BIZ_TYPE: 'member_point_biz_type', // 会员积分业务类型
+  MEMBER_EXPERIENCE_BIZ_TYPE: 'member_experience_biz_type', // 会员经验业务类型
+} as const
+
+/** ========== PAY - 支付模块 ========== */
+const PAY_DICT = {
+  PAY_CHANNEL_CODE: 'pay_channel_code', // 支付渠道编码
+  PAY_ORDER_STATUS: 'pay_order_status', // 商户支付订单状态
+  PAY_REFUND_STATUS: 'pay_refund_status', // 退款订单状态
+  PAY_NOTIFY_STATUS: 'pay_notify_status', // 商户支付回调状态
+  PAY_NOTIFY_TYPE: 'pay_notify_type', // 商户支付回调类型
+  PAY_TRANSFER_STATUS: 'pay_transfer_status', // 转账订单状态
+  PAY_TRANSFER_TYPE: 'pay_transfer_type', // 转账类型
+} as const
+
+/** ========== MALL - 商城模块 ========== */
+const MALL_DICT = {
+  PRODUCT_SPU_STATUS: 'product_spu_status', // 商品状态
+  TRADE_AFTER_SALE_STATUS: 'trade_after_sale_status', // 售后状态
+  TRADE_AFTER_SALE_WAY: 'trade_after_sale_way', // 售后方式
+  TRADE_AFTER_SALE_TYPE: 'trade_after_sale_type', // 售后类型
+  TRADE_ORDER_TYPE: 'trade_order_type', // 订单类型
+  TRADE_ORDER_STATUS: 'trade_order_status', // 订单状态
+  TRADE_ORDER_ITEM_AFTER_SALE_STATUS: 'trade_order_item_after_sale_status', // 订单项售后状态
+  TRADE_DELIVERY_TYPE: 'trade_delivery_type', // 配送方式
+  BROKERAGE_ENABLED_CONDITION: 'brokerage_enabled_condition', // 分佣模式
+  BROKERAGE_BIND_MODE: 'brokerage_bind_mode', // 分销关系绑定模式
+  BROKERAGE_BANK_NAME: 'brokerage_bank_name', // 佣金提现银行
+  BROKERAGE_WITHDRAW_TYPE: 'brokerage_withdraw_type', // 佣金提现类型
+  BROKERAGE_RECORD_BIZ_TYPE: 'brokerage_record_biz_type', // 佣金业务类型
+  BROKERAGE_RECORD_STATUS: 'brokerage_record_status', // 佣金状态
+  BROKERAGE_WITHDRAW_STATUS: 'brokerage_withdraw_status', // 佣金提现状态
+  PROMOTION_BANNER_POSITION: 'promotion_banner_position', // Banner 定位
+  PROMOTION_DISCOUNT_TYPE: 'promotion_discount_type', // 优惠类型
+  PROMOTION_COUPON_TEMPLATE_VALIDITY_TYPE: 'promotion_coupon_template_validity_type', // 优惠券模板有效期类型
+  PROMOTION_COUPON_STATUS: 'promotion_coupon_status', // 优惠券状态
+  PROMOTION_COUPON_TAKE_TYPE: 'promotion_coupon_take_type', // 优惠券领取方式
+} as const
+
+/** ========== MP - 公众号模块 ========== */
+const MP_DICT = {
+  MP_AUTO_REPLY_REQUEST_MATCH: 'mp_auto_reply_request_match', // 自动回复请求匹配类型
+  MP_MESSAGE_TYPE: 'mp_message_type', // 消息类型
+} as const
+
+/** ========== AI - 人工智能模块 ========== */
+const AI_DICT = {
+  AI_PLATFORM: 'ai_platform', // AI 平台
+  AI_MODEL_TYPE: 'ai_model_type', // AI 模型类型
+  AI_IMAGE_STATUS: 'ai_image_status', // AI 图片状态
+  AI_MUSIC_STATUS: 'ai_music_status', // AI 音乐状态
+  AI_GENERATE_MODE: 'ai_generate_mode', // AI 生成模式
+  AI_WRITE_TYPE: 'ai_write_type', // AI 写作类型
+  AI_WRITE_LENGTH: 'ai_write_length', // AI 写作长度
+  AI_WRITE_FORMAT: 'ai_write_format', // AI 写作格式
+  AI_WRITE_TONE: 'ai_write_tone', // AI 写作语气
+  AI_WRITE_LANGUAGE: 'ai_write_language', // AI 写作语言
+  AI_MCP_CLIENT_NAME: 'ai_mcp_client_name', // AI MCP Client 名字
+} as const
+
+/** ========== IOT - 物联网模块 ========== */
+const IOT_DICT = {
+  IOT_NET_TYPE: 'iot_net_type', // IOT 联网方式
+  IOT_PRODUCT_STATUS: 'iot_product_status', // IOT 产品状态
+  IOT_PRODUCT_DEVICE_TYPE: 'iot_product_device_type', // IOT 产品设备类型
+  IOT_PROTOCOL_TYPE: 'iot_protocol_type', // IOT 协议类型
+  IOT_SERIALIZE_TYPE: 'iot_serialize_type', // IOT 序列化类型
+  IOT_LOCATION_TYPE: 'iot_location_type', // IOT 定位类型
+  IOT_DEVICE_STATE: 'iot_device_state', // IOT 设备状态
+  IOT_THING_MODEL_TYPE: 'iot_thing_model_type', // IOT 产品功能类型
+  IOT_THING_MODEL_UNIT: 'iot_thing_model_unit', // IOT 物模型单位
+  IOT_RW_TYPE: 'iot_rw_type', // IOT 读写类型
+  IOT_DATA_SINK_TYPE_ENUM: 'iot_data_sink_type_enum', // IoT 数据流转目的类型
+  IOT_RULE_SCENE_TRIGGER_TYPE_ENUM: 'iot_rule_scene_trigger_type_enum', // IoT 场景流转触发类型
+  IOT_RULE_SCENE_ACTION_TYPE_ENUM: 'iot_rule_scene_action_type_enum', // IoT 场景规则动作类型
+  IOT_ALERT_LEVEL: 'iot_alert_level', // IoT 告警级别
+  IOT_ALERT_RECEIVE_TYPE: 'iot_alert_receive_type', // IoT 告警接收类型
+  IOT_OTA_TASK_DEVICE_SCOPE: 'iot_ota_task_device_scope', // IoT OTA 任务设备范围
+  IOT_OTA_TASK_STATUS: 'iot_ota_task_status', // IoT OTA 任务状态
+  IOT_OTA_TASK_RECORD_STATUS: 'iot_ota_task_record_status', // IoT OTA 记录状态
+  IOT_MODBUS_MODE: 'iot_modbus_mode', // IoT Modbus 工作模式
+  IOT_MODBUS_FRAME_FORMAT: 'iot_modbus_frame_format', // IoT Modbus 帧格式
+} as const
+
+/** ========== WMS - 仓储模块 ========== */
+const WMS_DICT = {
+  WMS_MERCHANT_TYPE: 'merchant_type', // WMS 往来企业类型
+  WMS_ORDER_STATUS: 'wms_order_status', // WMS 单据状态
+  WMS_ORDER_TYPE: 'wms_order_type', // WMS 单据类型
+  WMS_RECEIPT_ORDER_TYPE: 'wms_receipt_order_type', // WMS 入库类型
+  WMS_SHIPMENT_ORDER_TYPE: 'wms_shipment_order_type', // WMS 出库类型
+} as const
+
+/** ========== IM - 即时通讯模块 ========== */
+const IM_DICT = {
+  IM_MESSAGE_TYPE: 'im_message_type', // IM 消息类型
+  IM_PRIVATE_MESSAGE_STATUS: 'im_private_message_status', // IM 私聊消息状态
+  IM_GROUP_MESSAGE_STATUS: 'im_group_message_status', // IM 群聊消息状态
+  IM_GROUP_MESSAGE_RECEIPT_STATUS: 'im_group_message_receipt_status', // IM 群消息回执状态
+  IM_FRIEND_STATUS: 'im_friend_status', // IM 好友状态
+  IM_FRIEND_ADD_SOURCE: 'im_friend_add_source', // IM 好友添加来源
+  IM_FRIEND_REQUEST_HANDLE_RESULT: 'im_friend_request_handle_result', // IM 好友申请处理结果
+  IM_GROUP_STATUS: 'im_group_status', // IM 群状态
+  IM_GROUP_MEMBER_ROLE: 'im_group_member_role', // IM 群成员角色
+  IM_GROUP_ADD_SOURCE: 'im_group_add_source', // IM 加群来源
+  IM_GROUP_REQUEST_HANDLE_RESULT: 'im_group_request_handle_result', // IM 加群申请处理结果
+  IM_RTC_CALL_MEDIA_TYPE: 'im_rtc_call_media_type', // IM 通话媒体类型
+  IM_RTC_CALL_CONVERSATION_TYPE: 'im_rtc_call_conversation_type', // IM 通话会话类型
+  IM_RTC_CALL_STATUS: 'im_rtc_call_status', // IM 通话状态
+  IM_RTC_CALL_END_REASON: 'im_rtc_call_end_reason', // IM 通话结束原因
+  IM_RTC_PARTICIPANT_ROLE: 'im_rtc_participant_role', // IM 通话参与角色
+  IM_RTC_PARTICIPANT_STATUS: 'im_rtc_participant_status', // IM 通话参与状态
+  IM_CHANNEL_MATERIAL_TYPE: 'im_channel_material_type', // IM 频道素材内容类型
+} as const
+
 /** 字典类型枚举 - 统一导出 */
 export const DICT_TYPE = {
+  ...IM_DICT,
+  ...WMS_DICT,
+  ...IOT_DICT,
+  ...AI_DICT,
+  ...MP_DICT,
+  ...MALL_DICT,
+  ...CRM_DICT,
+  ...ERP_DICT,
+  ...PAY_DICT,
+  ...MEMBER_DICT,
   ...BPM_DICT,
   ...INFRA_DICT,
   ...SYSTEM_DICT,

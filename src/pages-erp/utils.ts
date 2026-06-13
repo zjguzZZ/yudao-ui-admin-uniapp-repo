@@ -1,0 +1,222 @@
+import type { ErpField, ErpModule, ErpOptionKey } from './config'
+import { getDictLabel } from '@/hooks/useDict'
+import { currRoute } from '@/utils'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { formatDate, formatDateTime } from '@/utils/date'
+import { createFormSchema } from '@/utils/wot'
+
+export type ErpOptionsMap = Partial<Record<ErpOptionKey, Array<Record<string, any>>>>
+
+/** 获取当前路由参数 */
+export function getCurrentRouteQuery() {
+  const query = { ...currRoute().query }
+  // #ifdef H5
+  const hashQuery = window.location.hash.split('?')[1] || ''
+  hashQuery.split('&').forEach((item) => {
+    if (!item) {
+      return
+    }
+    const [key, value] = item.split('=')
+    query[key] = value ? decodeURIComponent(value) : ''
+  })
+  // #endif
+  return query
+}
+
+/** 判断字段是否为时间字段 */
+export function isDateField(field: ErpField) {
+  return field.type === 'date' || /Time$|Date$/.test(field.prop)
+}
+
+/** 判断字段是否为金额字段 */
+export function isMoneyField(field: ErpField) {
+  return field.type === 'money' || /Price$/.test(field.prop)
+}
+
+/** 获取模块标题字段 */
+export function getTitleField(module: ErpModule) {
+  return module.fields.find(field => ['name', 'no', 'bizNo'].includes(field.prop)) || module.fields[0]
+}
+
+/** 获取列表展示字段 */
+export function getListFields(module: ErpModule) {
+  const titleProp = getTitleField(module)?.prop
+  return module.fields
+    .filter(field => field.prop !== titleProp && !field.hiddenInList && field.type !== 'items')
+    .slice(0, 6)
+}
+
+/** 获取搜索字段 */
+export function getSearchFields(module: ErpModule) {
+  return module.fields.filter(field => field.searchable && field.type !== 'items')
+}
+
+/** 获取表单字段 */
+export function getFormFields(module: ErpModule) {
+  return module.fields.filter(field => !field.hiddenInForm)
+}
+
+/** 获取字段字典类型 */
+export function getFieldDictType(field: ErpField) {
+  if (field.dictType) {
+    return field.dictType
+  }
+  if (field.type === 'status') {
+    return DICT_TYPE.COMMON_STATUS
+  }
+  if (field.type === 'audit-status') {
+    return 'erp_audit_status'
+  }
+  return ''
+}
+
+/** 获取选项展示名称 */
+export function getOptionName(option: Record<string, any>) {
+  return option.name || option.nickname || option.username || option.label || option.no || option.id
+}
+
+/** 规范化选择器选项 */
+export function normalizeOptions(list: Record<string, any>[] = []) {
+  return list.map(item => ({ ...item, id: item.id ?? item.value, name: getOptionName(item) }))
+}
+
+/** 读取选择器展示值 */
+export function getPickerText(field: ErpField, value: any, optionsMap: ErpOptionsMap, row?: Record<string, any>) {
+  if (field.labelField && row?.[field.labelField]) {
+    return row[field.labelField]
+  }
+  if (value === undefined || value === null || value === '') {
+    return '-'
+  }
+  const options = field.optionsKey ? optionsMap[field.optionsKey] || [] : []
+  const option = options.find(item => String(item.id) === String(value))
+  return option?.name || String(value)
+}
+
+/** 格式化 ERP 字段展示值 */
+export function formatErpValue(field: ErpField, row: Record<string, any> = {}, optionsMap: ErpOptionsMap = {}) {
+  const value = row[field.prop]
+  if (value === undefined || value === null || value === '') {
+    return '-'
+  }
+  if (field.type === 'picker') {
+    return getPickerText(field, value, optionsMap, row)
+  }
+  if (field.type === 'dict' || field.type === 'status' || field.type === 'audit-status') {
+    return getDictLabel(getFieldDictType(field), value) || String(value)
+  }
+  if (field.type === 'boolean') {
+    return value ? '是' : '否'
+  }
+  if (isDateField(field)) {
+    return formatDateTime(value) || formatDate(value) || String(value)
+  }
+  if (isMoneyField(field)) {
+    const price = Number(value)
+    return Number.isNaN(price) ? String(value) : price.toFixed(2)
+  }
+  return String(value)
+}
+
+/** 创建 ERP 表单默认值 */
+export function createErpFormData(module: ErpModule) {
+  const data: Record<string, any> = {}
+  module.fields.forEach((field) => {
+    if (field.prop === 'id' || field.readonly) {
+      return
+    }
+    if (field.type === 'items') {
+      data[field.prop] = []
+    } else if (field.type === 'status') {
+      data[field.prop] = CommonStatusEnum.ENABLE
+    } else if (field.type === 'boolean') {
+      data[field.prop] = false
+    } else if (isDateField(field)) {
+      data[field.prop] = ''
+    } else if (field.type === 'number' || field.type === 'money') {
+      data[field.prop] = undefined
+    } else {
+      data[field.prop] = undefined
+    }
+  })
+  return data
+}
+
+/** 创建 ERP 表单校验规则 */
+export function createErpFormSchema(module: ErpModule) {
+  const rules: Record<string, any[]> = {}
+  getFormFields(module).forEach((field) => {
+    if (field.required && !field.readonly) {
+      rules[field.prop] = [{ required: true, message: `${field.label}不能为空` }]
+    }
+  })
+  return createFormSchema(rules)
+}
+
+/** 四舍五入金额 */
+function roundPrice(value: number) {
+  return Number(value.toFixed(2))
+}
+
+/** 四舍五入数量 */
+function roundCount(value: number) {
+  return Number(value.toFixed(3))
+}
+
+/** 转换为数字 */
+function toNumber(value: any) {
+  const result = Number(value || 0)
+  return Number.isNaN(result) ? 0 : result
+}
+
+/** 计算单据明细金额 */
+export function refreshErpItemsAmount(data: Record<string, any>, module?: ErpModule) {
+  if (!Array.isArray(data.items)) {
+    return
+  }
+  let totalCount = 0
+  let totalPrice = 0
+  data.items.forEach((item) => {
+    if (module?.key === 'stock-check' && item.stockCount != null && item.actualCount != null) {
+      item.count = roundCount(toNumber(item.actualCount) - toNumber(item.stockCount))
+    }
+
+    const count = toNumber(item.count)
+    const price = toNumber(item.productPrice || item.price)
+    const hasCount = item.count !== undefined && item.count !== null && item.count !== ''
+    const hasPrice = (item.productPrice !== undefined && item.productPrice !== null && item.productPrice !== '') || (item.price !== undefined && item.price !== null && item.price !== '')
+    const hasTaxAmount = 'totalProductPrice' in item || 'taxPercent' in item || 'taxPrice' in item
+    if (hasCount && hasPrice) {
+      if (hasTaxAmount) {
+        item.totalProductPrice = roundPrice(count * price)
+        item.taxPrice = roundPrice(item.totalProductPrice * toNumber(item.taxPercent) / 100)
+        item.totalPrice = roundPrice(item.totalProductPrice + item.taxPrice)
+      } else {
+        item.totalPrice = roundPrice(count * price)
+      }
+    }
+    totalCount += count
+    totalPrice += toNumber(item.totalPrice)
+  })
+
+  if (data.items.length > 0) {
+    if (module?.key === 'finance-payment') {
+      const paymentPrice = data.items.reduce((sum, item) => sum + toNumber(item.paymentPrice), 0)
+      data.totalPrice = roundPrice(paymentPrice)
+      data.paymentPrice = roundPrice(paymentPrice - toNumber(data.discountPrice))
+      return
+    }
+    if (module?.key === 'finance-receipt') {
+      const receiptPrice = data.items.reduce((sum, item) => sum + toNumber(item.receiptPrice), 0)
+      data.totalPrice = roundPrice(receiptPrice)
+      data.receiptPrice = roundPrice(receiptPrice - toNumber(data.discountPrice))
+      return
+    }
+    data.totalCount = roundCount(totalCount)
+    const discountPrice = 'discountPercent' in data ? roundPrice(totalPrice * toNumber(data.discountPercent) / 100) : toNumber(data.discountPrice)
+    if ('discountPrice' in data || 'discountPercent' in data) {
+      data.discountPrice = discountPrice
+    }
+    data.totalPrice = roundPrice(totalPrice - discountPrice + toNumber(data.otherPrice))
+  }
+}

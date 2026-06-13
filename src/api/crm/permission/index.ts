@@ -1,0 +1,68 @@
+import { http } from '@/http/http'
+
+/** CRM 数据权限 */
+export interface Permission {
+  id?: number
+  userId: number
+  bizType: number
+  bizId: number
+  level: number
+  toBizTypes?: number[]
+  deptName?: string
+  nickname?: string
+  postNames?: string[]
+  createTime?: Date | string
+  ids?: number[]
+}
+
+/** CRM 转移请求 */
+export interface TransferReq {
+  id: number
+  newOwnerUserId: number
+  oldOwnerPermissionLevel?: number
+  toBizTypes?: number[]
+}
+
+/** CRM 业务类型枚举 */
+export enum BizTypeEnum {
+  CRM_CLUE = 1,
+  CRM_CUSTOMER = 2,
+  CRM_CONTACT = 3,
+  CRM_BUSINESS = 4,
+  CRM_CONTRACT = 5,
+  CRM_PRODUCT = 6,
+  CRM_RECEIVABLE = 7,
+  CRM_RECEIVABLE_PLAN = 8,
+}
+
+/** CRM 数据权限级别枚举 */
+export enum PermissionLevelEnum {
+  OWNER = 1,
+  READ = 2,
+  WRITE = 3,
+}
+
+/** 获得数据权限列表 */
+export function getPermissionList(params: Record<string, any>) {
+  return http.get<Permission[]>('/crm/permission/list', params)
+}
+
+/** 创建数据权限 */
+export function createPermission(data: Permission) {
+  return http.post<number>('/crm/permission/create', data)
+}
+
+/** 编辑数据权限 */
+export function updatePermission(data: Partial<Permission>) {
+  return http.put<boolean>('/crm/permission/update', data)
+}
+
+/** 批量删除数据权限 */
+export function deletePermissionBatch(ids: number[]) {
+  return http.delete<boolean>(`/crm/permission/delete?ids=${ids.join(',')}`)
+}
+
+/** 删除自己的数据权限 */
+export function deleteSelfPermission(id: number) {
+  return http.delete<boolean>(`/crm/permission/delete-self?id=${id}`)
+}

@@ -1,0 +1,226 @@
+<template>
+  <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
+    <wd-navbar
+      :title="getTitle"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+    />
+
+    <!-- 图文列表 -->
+    <view class="bg-white px-24rpx py-20rpx">
+      <view class="mb-16rpx flex items-center justify-between">
+        <view class="text-28rpx text-[#333] font-semibold">
+          图文列表
+        </view>
+        <wd-button v-if="articles.length < 8" size="small" type="primary" @click="handleAddArticle">
+          新增图文
+        </wd-button>
+      </view>
+      <scroll-view scroll-x>
+        <view class="flex gap-16rpx">
+          <view
+            v-for="(article, index) in articles"
+            :key="index"
+            class="shrink-0 rounded-8rpx border px-20rpx py-12rpx text-26rpx"
+            :class="activeIndex === index ? 'border-[#1677ff] text-[#1677ff]' : 'border-[#eee] text-[#666]'"
+            @click="handleSwitchArticle(index)"
+          >
+            {{ index + 1 }}. {{ article.title || '未命名图文' }}
+          </view>
+        </view>
+      </scroll-view>
+      <view class="mt-16rpx flex gap-12rpx">
+        <wd-button class="flex-1" size="small" variant="plain" :disabled="activeIndex === 0" @click="handleMoveArticle(-1)">
+          上移
+        </wd-button>
+        <wd-button class="flex-1" size="small" variant="plain" :disabled="activeIndex === articles.length - 1" @click="handleMoveArticle(1)">
+          下移
+        </wd-button>
+        <wd-button class="flex-1" size="small" type="danger" :disabled="articles.length <= 1" @click="handleRemoveArticle">
+          删除
+        </wd-button>
+      </view>
+    </view>
+
+    <!-- 表单区域 -->
+    <view class="mt-16rpx">
+      <wd-form ref="formRef" :model="formData" :schema="formSchema">
+        <wd-cell-group border>
+          <wd-form-item title="标题" title-width="220rpx" prop="title">
+            <wd-input v-model="formData.title" clearable placeholder="请输入标题" />
+          </wd-form-item>
+          <wd-form-item title="作者" title-width="220rpx" prop="author">
+            <wd-input v-model="formData.author" clearable placeholder="请输入作者" />
+          </wd-form-item>
+          <wd-form-item title="封面 MediaID" title-width="220rpx" prop="thumbMediaId">
+            <wd-input v-model="formData.thumbMediaId" clearable placeholder="请输入封面 MediaID" />
+          </wd-form-item>
+          <wd-form-item title="封面 URL" title-width="220rpx" prop="thumbUrl">
+            <wd-input v-model="formData.thumbUrl" clearable placeholder="请输入封面 URL" />
+          </wd-form-item>
+          <wd-form-item title="摘要" title-width="220rpx" prop="digest">
+            <wd-textarea v-model="formData.digest" clearable placeholder="请输入摘要" :maxlength="120" show-word-limit />
+          </wd-form-item>
+          <wd-form-item title="原文地址" title-width="220rpx" prop="contentSourceUrl">
+            <wd-input v-model="formData.contentSourceUrl" clearable placeholder="请输入原文地址" />
+          </wd-form-item>
+          <wd-form-item title="正文" title-width="220rpx" prop="content">
+            <wd-textarea v-model="formData.content" clearable placeholder="请输入正文 HTML 或文本" :maxlength="10000" />
+          </wd-form-item>
+        </wd-cell-group>
+      </wd-form>
+    </view>
+
+    <!-- 底部保存按钮 -->
+    <view class="yd-detail-footer">
+      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+        保存
+      </wd-button>
+    </view>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { NewsItem } from '@/api/mp/draft'
+import { onLoad } from '@dcloudio/uni-app'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { computed, ref } from 'vue'
+import { createDraft, createEmptyNewsItem, updateDraft } from '@/api/mp/draft'
+import { navigateBackPlus } from '@/utils'
+import { createFormSchema } from '@/utils/wot'
+import { getMpRouteNumber, getMpRouteString, useMpRouteParams } from '../../utils/route'
+
+const props = defineProps<{
+  accountId?: number | any
+  mediaId?: string
+}>()
+const { routeParams, syncRouteParams } = useMpRouteParams(props)
+
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
+const toast = useToast()
+const accountId = computed(() => getMpRouteNumber(routeParams.accountId))
+const mediaId = computed(() => getMpRouteString(routeParams.mediaId))
+const getTitle = computed(() => mediaId.value ? '编辑公众号草稿' : '新增公众号草稿')
+const formLoading = ref(false) // 表单提交状态
+const formData = ref<NewsItem>(createEmptyNewsItem()) // 表单数据
+const articles = ref<NewsItem[]>([formData.value]) // 图文列表
+const activeIndex = ref(0) // 当前图文索引
+const formSchema = createFormSchema({
+  title: [{ required: true, message: '标题不能为空' }],
+  thumbMediaId: [{ required: true, message: '封面 MediaID 不能为空' }],
+  content: [{ required: true, message: '正文不能为空' }],
+})
+const formRef = ref<FormInstance>() // 表单组件引用
+
+/** 返回上一页 */
+function handleBack() {
+  navigateBackPlus('/pages-mp/draft/index')
+}
+
+/** 加载编辑数据 */
+function getDetail() {
+  if (!mediaId.value) {
+    return
+  }
+  const draft = uni.getStorageSync('mp:draft:edit')
+  const articles = draft?.content?.newsItem || []
+  setArticles(articles.length > 0 ? articles : [createEmptyNewsItem()])
+}
+
+/** 设置图文列表 */
+function setArticles(value: NewsItem[]) {
+  articles.value = value.map(item => ({
+    ...createEmptyNewsItem(),
+    ...item,
+  }))
+  activeIndex.value = 0
+  formData.value = articles.value[0]
+}
+
+/** 切换图文 */
+function handleSwitchArticle(index: number) {
+  activeIndex.value = index
+  formData.value = articles.value[index]
+}
+
+/** 新增图文 */
+function handleAddArticle() {
+  const article = createEmptyNewsItem()
+  articles.value.push(article)
+  handleSwitchArticle(articles.value.length - 1)
+}
+
+/** 移动图文 */
+function handleMoveArticle(offset: number) {
+  const targetIndex = activeIndex.value + offset
+  if (targetIndex < 0 || targetIndex >= articles.value.length) {
+    return
+  }
+  const current = articles.value[activeIndex.value]
+  articles.value[activeIndex.value] = articles.value[targetIndex]
+  articles.value[targetIndex] = current
+  handleSwitchArticle(targetIndex)
+}
+
+/** 删除图文 */
+function handleRemoveArticle() {
+  if (articles.value.length <= 1) {
+    return
+  }
+  articles.value.splice(activeIndex.value, 1)
+  handleSwitchArticle(Math.min(activeIndex.value, articles.value.length - 1))
+}
+
+/** 提交表单 */
+async function handleSubmit() {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
+    return
+  }
+  if (!accountId.value) {
+    toast.show('缺少公众号编号')
+    return
+  }
+
+  const invalidIndex = articles.value.findIndex(item => !item.title || !item.thumbMediaId || !item.content)
+  if (invalidIndex >= 0) {
+    handleSwitchArticle(invalidIndex)
+    toast.show(`第 ${invalidIndex + 1} 篇图文未填写完整`)
+    return
+  }
+
+  formLoading.value = true
+  try {
+    if (mediaId.value) {
+      await updateDraft(accountId.value, mediaId.value, articles.value)
+      toast.success('修改成功')
+    } else {
+      await createDraft(accountId.value, articles.value)
+      toast.success('新增成功')
+    }
+    uni.$emit('mp:draft:reload')
+    setTimeout(() => {
+      handleBack()
+    }, 500)
+  } finally {
+    formLoading.value = false
+  }
+}
+
+/** 初始化 */
+onLoad((query) => {
+  syncRouteParams(query)
+  getDetail()
+})
+</script>
+
+<style lang="scss" scoped>
+</style>

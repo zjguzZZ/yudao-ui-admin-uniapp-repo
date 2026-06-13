@@ -1,0 +1,45 @@
+import type { PageParam, PageResult } from '@/http/types'
+import { http } from '@/http/http'
+
+/** 分销用户 */
+export interface TradeBrokerageUser {
+  id?: number
+  bindUserId?: number
+  bindUserTime?: string
+  brokerageEnabled?: boolean
+  brokerageTime?: string
+  price?: number
+  frozenPrice?: number
+  nickname?: string
+  avatar?: string
+}
+
+/** 获取分销用户分页列表 */
+export function getTradeBrokerageUserPage(params: PageParam) {
+  return http.get<PageResult<TradeBrokerageUser>>('/trade/brokerage-user/page', params)
+}
+
+/** 获取分销用户详情 */
+export function getTradeBrokerageUser(id: number) {
+  return http.get<TradeBrokerageUser>(`/trade/brokerage-user/get?id=${id}`)
+}
+
+/** 创建分销用户 */
+export function createTradeBrokerageUser(data: TradeBrokerageUser) {
+  return http.post<number>('/trade/brokerage-user/create', data as Record<string, any>)
+}
+
+/** 修改推广员 */
+export function updateTradeBrokerageUser(data: Record<string, any>) {
+  return http.put<boolean>('/trade/brokerage-user/update-bind-user', data)
+}
+
+/** 清除推广员 */
+export function clearTradeBrokerageUserBind(id: number) {
+  return http.put<boolean>(`/trade/brokerage-user/clear-bind-user?id=${id}`)
+}
+
+/** 修改推广资格 */
+export function updateTradeBrokerageUserEnabled(data: { id: number, brokerageEnabled: boolean }) {
+  return http.put<boolean>('/trade/brokerage-user/update-brokerage-enabled', data)
+}

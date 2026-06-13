@@ -65,6 +65,7 @@ export interface ApprovalTaskInfo {
   assigneeUser: User
   ownerUser: User
   reason: string
+  attachments?: string[]
   signPicUrl: string
   status: number
 }

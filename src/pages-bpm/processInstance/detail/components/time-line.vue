@@ -165,10 +165,33 @@
 
             <!-- 审批意见 -->
             <view
-              v-if="shouldShowApprovalReason(task, activity.nodeType)"
+              v-if="shouldShowReasonAndAttachment(task, activity.nodeType)"
               class="mt-8rpx rounded-8rpx bg-[#f5f5f5] p-16rpx"
             >
-              <text class="text-24rpx text-[#666]">审批意见：{{ task.reason }}</text>
+              <view v-if="task.reason">
+                <text class="text-24rpx text-[#666]">审批意见：{{ task.reason }}</text>
+              </view>
+              <view v-if="task.attachments?.length" class="mt-12rpx flex flex-wrap gap-12rpx">
+                <view
+                  v-for="attachment in task.attachments"
+                  :key="attachment"
+                  class="flex items-center"
+                  @click="handleOpenAttachment(attachment)"
+                >
+                  <image
+                    v-if="isImageAttachment(attachment)"
+                    :src="attachment"
+                    class="h-88rpx w-88rpx rounded-8rpx bg-[#eee]"
+                    mode="aspectFill"
+                  />
+                  <view v-else class="max-w-520rpx flex items-center rounded-8rpx bg-white px-12rpx py-8rpx">
+                    <wd-icon name="file" size="28rpx" color="#666" />
+                    <text class="ml-8rpx truncate text-24rpx text-[#666]">
+                      {{ getAttachmentName(attachment) }}
+                    </text>
+                  </view>
+                </view>
+              </view>
             </view>
 
             <!-- 签名 -->
@@ -371,12 +394,80 @@ function shouldShowCustomUserSelect(activity: ApprovalNodeInfo) {
   )
 }
 
-/** 判断是否需要显示审批意见 */
-function shouldShowApprovalReason(task: any, nodeType: number) {
+/** 判断是否需要显示审批意见和附件 */
+function shouldShowReasonAndAttachment(task: ApprovalTaskInfo, nodeType: number) {
   return (
-    task.reason
-    && [BpmNodeTypeEnum.END_EVENT_NODE, BpmNodeTypeEnum.USER_TASK_NODE].includes(nodeType)
+    Boolean(task.reason || task.attachments?.length)
+    && [
+      BpmNodeTypeEnum.START_USER_NODE,
+      BpmNodeTypeEnum.END_EVENT_NODE,
+      BpmNodeTypeEnum.USER_TASK_NODE,
+    ].includes(nodeType)
   )
+}
+
+/** 是否图片附件 */
+function isImageAttachment(url: string) {
+  const ext = url.split(/[?#]/)[0]?.split('.').pop()?.toLowerCase()
+  return ['bmp', 'gif', 'jpeg', 'jpg', 'png', 'webp'].includes(ext || '')
+}
+
+/** 获取附件名 */
+function getAttachmentName(url: string) {
+  const cleanUrl = url.split(/[?#]/)[0]
+  const fileName = cleanUrl.slice(cleanUrl.lastIndexOf('/') + 1)
+  try {
+    return decodeURIComponent(fileName)
+  } catch {
+    return fileName
+  }
+}
+
+/** 打开附件 */
+function handleOpenAttachment(url: string) {
+  if (isImageAttachment(url)) {
+    previewImage(url)
+    return
+  }
+  // #ifdef H5
+  window.open(url, '_blank')
+  // #endif
+  // #ifndef H5
+  uni.showLoading({
+    title: '打开中...',
+    mask: true,
+  })
+  uni.downloadFile({
+    url,
+    success: (res) => {
+      uni.openDocument({
+        filePath: res.tempFilePath,
+        fileType: getAttachmentFileType(url),
+        complete: () => {
+          uni.hideLoading()
+        },
+        fail: () => {
+          uni.showToast({
+            icon: 'none',
+            title: '附件打开失败',
+          })
+        },
+      })
+    },
+    fail: () => {
+      uni.hideLoading()
+      uni.showToast({
+        icon: 'none',
+        title: '附件下载失败',
+      })
+    },
+  })
+  // #endif
+}
+
+/** 获取附件类型 */
+function getAttachmentFileType(url: string) {
+  return url.split(/[?#]/)[0]?.split('.').pop()?.toLowerCase()
 }
 
 /** 获取状态文本样式类 */

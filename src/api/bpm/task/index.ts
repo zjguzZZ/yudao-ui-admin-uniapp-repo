@@ -53,6 +53,7 @@ export function getTaskDonePage(params: PageParam) {
 export function approveTask(data: {
   id: string
   reason: string
+  attachments?: string[]
   variables?: Record<string, any> // 审批通过时修改的流程变量
   signPicUrl?: string // 签名图片 URL
   nextAssignees?: Record<string, number[]> // 下一个节点审批人
@@ -61,7 +62,7 @@ export function approveTask(data: {
 }
 
 /** 审批拒绝 */
-export function rejectTask(data: { id: string, reason: string }) {
+export function rejectTask(data: { id: string, reason: string, attachments?: string[] }) {
   return http.put<boolean>('/bpm/task/reject', data)
 }
 

@@ -65,6 +65,18 @@
               clearable
             />
           </wd-form-item>
+          <wd-cell title="附件/图片" title-width="180rpx" />
+          <view class="px-24rpx pb-24rpx">
+            <wd-upload
+              v-model:file-list="attachmentFiles"
+              :accept="attachmentAccept"
+              :extension="APPROVAL_ATTACHMENT_EXTENSIONS"
+              :max-size="APPROVAL_ATTACHMENT_MAX_SIZE"
+              multiple
+              :limit="10"
+              :upload-method="attachmentUploadMethod"
+            />
+          </view>
         </wd-cell-group>
       </wd-form>
 
@@ -105,6 +117,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { UploadFileItem, UploadMethod } from '@wot-ui/ui/components/wd-upload/types'
 import type { ApprovalNodeInfo } from '@/api/bpm/processInstance'
 import type { Task } from '@/api/bpm/task'
 import type { FormCreateApi } from '@/pages-bpm/components/form-create/packages/wot-ui/types'
@@ -113,6 +126,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { getApprovalDetail, getNextApproveNodes } from '@/api/bpm/processInstance'
 import { approveTask, rejectTask } from '@/api/bpm/task'
+import { uploadFile as uploadFileToServer } from '@/api/infra/file'
 import FormCreate from '@/pages-bpm/components/form-create/packages/wot-ui/src/index.vue'
 import ProcessInstanceTimeline from '@/pages-bpm/processInstance/detail/components/time-line.vue'
 import { setConfAndFields2 } from '@/pages-bpm/utils'
@@ -139,6 +153,32 @@ const isApprove = computed(() => props.pass !== 'false') // true: 同意, false:
 const toast = useToast()
 const formLoading = ref(false) // 审批提交状态
 const taskInfo = ref<Task | null>(null) // 任务信息
+const attachmentFiles = ref<UploadFileItem[]>([]) // 审批附件
+const APPROVAL_ATTACHMENT_EXTENSIONS = [
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.txt',
+  '.pdf',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.bmp',
+  '.webp',
+]
+const APPROVAL_ATTACHMENT_MAX_SIZE = 5 * 1024 * 1024
+const attachmentAccept = computed(() => {
+  // #ifdef H5 || MP-WEIXIN
+  return 'all'
+  // #endif
+  // #ifndef H5 || MP-WEIXIN
+  return 'image'
+  // #endif
+})
 
 const nextAssigneesActivityNode = ref<ApprovalNodeInfo[]>([]) // 下一个节点审批人列表
 const approveUserSelectTasks = ref<ApprovalNodeInfo[]>([]) // 需要选择审批人的节点列表
@@ -321,6 +361,93 @@ function previewSignature() {
   }
 }
 
+/** 附件上传 */
+const attachmentUploadMethod: UploadMethod = (file, formData, options) => {
+  const filePath = file.url || (file as any).path
+  if (!filePath) {
+    options.onError({ errMsg: '上传文件路径为空' } as UniApp.GeneralCallbackResult, file, formData)
+    return
+  }
+
+  return uploadFileToServer(filePath, 'bpm/task-attachment')
+    .then((url) => {
+      options.onSuccess({
+        data: JSON.stringify({ code: 0, data: url }),
+        errMsg: 'uploadFile:ok',
+        statusCode: 200,
+      } as UniApp.UploadFileSuccessCallbackResult, file, formData)
+    })
+    .catch((error) => {
+      const message = error?.message || error?.errMsg || '上传失败'
+      toast.show(message)
+      options.onError({ errMsg: message } as UniApp.GeneralCallbackResult, file, formData)
+    })
+}
+
+/** 获取已上传附件 URL */
+function getUploadedUrl(item: UploadFileItem) {
+  const response = parseUploadResponse(item.response)
+  if (typeof response === 'string') {
+    return response
+  }
+  if (response?.code !== undefined) {
+    if (response.code === 0) {
+      return extractUploadedUrl(response.data) || response.url
+    }
+    toast.show(response.msg || response.message || '上传失败')
+    return undefined
+  }
+  return extractUploadedUrl(response?.data) || response?.url || item.url
+}
+
+/** 获取提交附件列表 */
+function getSubmitAttachments() {
+  return attachmentFiles.value
+    .filter(file => file.status === 'success')
+    .map(file => getUploadedUrl(file))
+    .filter(Boolean) as string[]
+}
+
+/** 校验附件上传状态 */
+function validateAttachmentFiles() {
+  const hasUploadingFile = attachmentFiles.value.some(file =>
+    file.status === 'pending' || file.status === 'loading',
+  )
+  if (hasUploadingFile) {
+    toast.show('附件正在上传中，请稍后提交')
+    return false
+  }
+  const hasFailedFile = attachmentFiles.value.some(file => file.status === 'fail')
+  if (hasFailedFile) {
+    toast.show('存在上传失败的附件，请删除或重新上传')
+    return false
+  }
+  return true
+}
+
+function extractUploadedUrl(data: any) {
+  if (typeof data === 'string') {
+    return data
+  }
+  if (data && typeof data === 'object') {
+    return data.url || data.fileUrl || data.path
+  }
+}
+
+function parseUploadResponse(response?: string | Record<string, any>) {
+  if (!response) {
+    return undefined
+  }
+  if (typeof response !== 'string') {
+    return response
+  }
+  try {
+    return JSON.parse(response)
+  } catch {
+    return response
+  }
+}
+
 /** 提交表单 */
 async function handleSubmit() {
   if (formLoading.value) {
@@ -352,15 +479,20 @@ async function handleSubmit() {
       }
     }
   }
+  if (!validateAttachmentFiles()) {
+    return
+  }
 
   formLoading.value = true
   try {
+    const attachments = getSubmitAttachments()
     if (isApprove.value) {
       const variables = getApprovalVariables()
       // 审批通过
       await approveTask({
         id: taskId.value as string,
         reason: formData.reason,
+        attachments,
         signPicUrl: formData.signPicUrl || undefined,
         variables: Object.keys(variables).length > 0 ? variables : undefined,
         nextAssignees: Object.keys(approveUserSelectAssignees.value).length > 0
@@ -372,6 +504,7 @@ async function handleSubmit() {
       await rejectTask({
         id: taskId.value as string,
         reason: formData.reason,
+        attachments,
       })
     }
     clearCachedNormalFormVariables()

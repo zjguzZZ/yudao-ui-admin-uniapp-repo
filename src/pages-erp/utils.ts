@@ -3,6 +3,7 @@ import { getDictLabel } from '@/hooks/useDict'
 import { currRoute } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
+import { staticUrl } from '@/utils/download'
 import { createFormSchema } from '@/utils/wot'
 
 export type ErpOptionsMap = Partial<Record<ErpOptionKey, Array<Record<string, any>>>>
@@ -21,6 +22,56 @@ export function getCurrentRouteQuery() {
   })
   // #endif
   return query
+}
+
+/** 解析附件文件名 */
+export function getFileName(url?: string) {
+  if (!url) {
+    return '附件'
+  }
+  const path = url.split('?')[0]
+  return decodeURIComponent(path.slice(Math.max(0, path.lastIndexOf('/') + 1))) || '附件'
+}
+
+/** 补全附件访问地址 */
+export function resolveErpFileUrl(url?: string) {
+  if (!url) {
+    return ''
+  }
+  if (/^https?:\/\//.test(url) || url.startsWith('blob:') || url.startsWith('data:')) {
+    return url
+  }
+  return staticUrl(url)
+}
+
+/** 打开附件（图片预览 / 文档下载） */
+export function openErpFile(url?: string) {
+  const fullUrl = resolveErpFileUrl(url)
+  if (!fullUrl) {
+    return
+  }
+  // #ifdef H5
+  window.open(fullUrl)
+  return
+  // #endif
+  // eslint-disable-next-line no-unreachable
+  if (/\.(?:png|jpe?g|gif|webp|bmp)(?:\?|$)/i.test(fullUrl)) {
+    uni.previewImage({ urls: [fullUrl] })
+    return
+  }
+  uni.showLoading({ title: '加载中...' })
+  uni.downloadFile({
+    url: fullUrl,
+    success: (res) => {
+      uni.openDocument({ filePath: res.tempFilePath, showMenu: true })
+    },
+    fail: () => {
+      uni.showToast({ icon: 'none', title: '打开附件失败' })
+    },
+    complete: () => {
+      uni.hideLoading()
+    },
+  })
 }
 
 /** 判断字段是否为时间字段 */
@@ -108,6 +159,9 @@ export function formatErpValue(field: ErpField, row: Record<string, any> = {}, o
   if (field.type === 'boolean') {
     return value ? '是' : '否'
   }
+  if (field.type === 'file') {
+    return getFileName(String(value))
+  }
   if (isDateField(field)) {
     return formatDateTime(value) || formatDate(value) || String(value)
   }
@@ -127,6 +181,8 @@ export function createErpFormData(module: ErpModule) {
     }
     if (field.type === 'items') {
       data[field.prop] = []
+    } else if (field.type === 'file') {
+      data[field.prop] = ''
     } else if (field.type === 'status') {
       data[field.prop] = CommonStatusEnum.ENABLE
     } else if (field.type === 'boolean') {

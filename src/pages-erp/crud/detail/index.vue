@@ -14,6 +14,13 @@
           <wd-cell v-if="field.type === 'status' || field.type === 'audit-status' || field.type === 'dict'" :title="field.label">
             <dict-tag :type="getFieldDictType(field)" :value="formData?.[field.prop]" />
           </wd-cell>
+          <wd-cell
+            v-else-if="field.type === 'file'"
+            :title="field.label"
+            :value="formData?.[field.prop] ? formatErpValue(field, formData, optionsMap) : '-'"
+            :is-link="!!formData?.[field.prop]"
+            @click="handleOpenFile(formData?.[field.prop])"
+          />
           <wd-cell v-else-if="field.type !== 'items'" :title="field.label" :value="formatErpValue(field, formData, optionsMap)" />
         </template>
       </wd-cell-group>
@@ -88,7 +95,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { erpOptionLoaders, getErpItemFields, getErpModule } from '@/pages-erp/config'
-import { formatErpValue, getCurrentRouteQuery, getFieldDictType, normalizeOptions } from '@/pages-erp/utils'
+import { formatErpValue, getCurrentRouteQuery, getFieldDictType, normalizeOptions, openErpFile } from '@/pages-erp/utils'
 
 const props = defineProps<{
   module?: string
@@ -195,6 +202,14 @@ function handleEdit() {
   uni.navigateTo({
     url: '/pages-erp/crud/form/index?module=' + moduleKey.value + '&id=' + detailId.value,
   })
+}
+
+/** 打开附件 */
+function handleOpenFile(url?: string) {
+  if (!url) {
+    return
+  }
+  openErpFile(url)
 }
 
 /** 绑定刷新事件 */

@@ -23,7 +23,7 @@ import * as WarehouseApi from '@/api/erp/stock/warehouse'
 import * as PurchaseStatisticsApi from '@/api/erp/statistics/purchase'
 import * as SaleStatisticsApi from '@/api/erp/statistics/sale'
 
-export type ErpFieldType = 'audit-status' | 'boolean' | 'date' | 'dict' | 'items' | 'money' | 'number' | 'picker' | 'status' | 'textarea' | 'text'
+export type ErpFieldType = 'audit-status' | 'boolean' | 'date' | 'dict' | 'file' | 'items' | 'money' | 'number' | 'picker' | 'status' | 'textarea' | 'text'
 export type ErpOptionKey = 'account' | 'category' | 'customer' | 'product' | 'supplier' | 'unit' | 'user' | 'warehouse'
 
 export interface ErpField {
@@ -114,7 +114,7 @@ const orderBaseFields = (party: 'customer' | 'supplier', timeProp: string, timeL
   { prop: 'refundPrice', label: '应退金额', type: 'money' },
   { prop: 'status', label: '状态', type: 'audit-status', searchable: true, readonly: true },
   { prop: 'remark', label: '备注', type: 'textarea' },
-  { prop: 'fileUrl', label: '附件地址', hiddenInList: true },
+  { prop: 'fileUrl', label: '附件', type: 'file', hiddenInList: true },
   { prop: 'items', label: '商品明细', type: 'items', hiddenInList: true },
 ]
 

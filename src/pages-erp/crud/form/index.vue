@@ -84,6 +84,9 @@
                   clearable
                 />
               </wd-form-item>
+              <wd-form-item v-else-if="field.type === 'file'" :title="field.label" title-width="200rpx" :prop="field.prop">
+                <FileUpload v-model="formData[field.prop]" />
+              </wd-form-item>
               <wd-form-item v-else-if="field.type === 'items'" :title="field.label" title-width="200rpx">
                 <view class="w-full">
                   <view v-for="(item, index) in formData.items" :key="index" class="mb-20rpx rounded-12rpx bg-[#f8f8f8] p-20rpx">
@@ -195,6 +198,7 @@ import { getWotPickerFormValue } from '@/utils/wot'
 import { erpOptionLoaders, getErpItemFields, getErpModule } from '@/pages-erp/config'
 import { createErpFormData, createErpFormSchema, formatErpValue, getCurrentRouteQuery, getFormFields, isDateField, normalizeOptions, refreshErpItemsAmount } from '@/pages-erp/utils'
 import BizSelector from '../components/biz-selector.vue'
+import FileUpload from '../components/file-upload.vue'
 
 const props = defineProps<{
   module?: string

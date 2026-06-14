@@ -17,13 +17,25 @@
     <!-- 基本信息 -->
     <template v-if="activeTab === 'basic'">
       <wd-cell-group border>
-        <template v-for="field in detailFields" :key="field.prop">
-          <wd-cell v-if="field.dictType" :title="field.label">
-            <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="formData[field.prop]" />
-            <text v-else>-</text>
-          </wd-cell>
-          <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-        </template>
+        <wd-cell title="合同编号" :value="formData.no || '-'" />
+        <wd-cell title="合同名称" :value="formData.name || '-'" />
+        <wd-cell title="客户名称" :value="formData.customerName || '-'" />
+        <wd-cell title="商机名称" :value="formData.businessName || '-'" />
+        <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+        <wd-cell title="下单日期" :value="formatDate(formData.orderDate) || '-'" />
+        <wd-cell title="开始时间" :value="formatDate(formData.startTime) || '-'" />
+        <wd-cell title="结束时间" :value="formatDate(formData.endTime) || '-'" />
+        <wd-cell title="公司签约人" :value="formData.signUserName || '-'" />
+        <wd-cell title="客户签约人" :value="formData.signContactName || '-'" />
+        <wd-cell title="审批状态">
+          <dict-tag v-if="formData.auditStatus != null && formData.auditStatus !== ''" :type="DICT_TYPE.CRM_AUDIT_STATUS" :value="formData.auditStatus" />
+          <text v-else>-</text>
+        </wd-cell>
+        <wd-cell title="合同金额" :value="formData.totalPrice != null && formData.totalPrice !== '' ? formatMoney(formData.totalPrice) : '-'" />
+        <wd-cell title="整单折扣(%)" :value="formData.discountPercent || '-'" />
+        <wd-cell title="已回款金额" :value="formData.totalReceivablePrice != null && formData.totalReceivablePrice !== '' ? formatMoney(formData.totalReceivablePrice) : '-'" />
+        <wd-cell title="备注" :value="formData.remark || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
       </wd-cell-group>
 
       <!-- 产品清单（只读） -->
@@ -149,25 +161,6 @@ const tabs: { key: string, title: string }[] = [ // tab 配置
   { key: 'receivables', title: '回款' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'date' | 'datetime' | 'money' }[] = [ // 基本信息字段
-  { label: '合同编号', prop: 'no' },
-  { label: '合同名称', prop: 'name' },
-  { label: '客户名称', prop: 'customerName' },
-  { label: '商机名称', prop: 'businessName' },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '下单日期', prop: 'orderDate', type: 'date' },
-  { label: '开始时间', prop: 'startTime', type: 'date' },
-  { label: '结束时间', prop: 'endTime', type: 'date' },
-  { label: '公司签约人', prop: 'signUserName' },
-  { label: '客户签约人', prop: 'signContactName' },
-  { label: '审批状态', prop: 'auditStatus', dictType: DICT_TYPE.CRM_AUDIT_STATUS },
-  { label: '合同金额', prop: 'totalPrice', type: 'money' },
-  { label: '整单折扣(%)', prop: 'discountPercent' },
-  { label: '已回款金额', prop: 'totalReceivablePrice', type: 'money' },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-]
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -222,32 +215,6 @@ const hasFooter = computed(() => {
   }
 })
 
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = formData.value[prop]
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'date' | 'datetime' | 'money' }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'date') {
-    return formatDate(value) || '-'
-  }
-  if (field.type === 'money') {
-    return formatMoney(value)
-  }
-  return String(value)
-}
-
 /** 格式化金额 */
 function formatMoney(value: any) {
   const amount = Number(value)
@@ -272,25 +239,6 @@ async function getDetail() {
   }
 }
 
-// TODO @AI：不要搞这样的封装，每个自己写！
-/** 执行业务操作（确认 → 调用 → 刷新） */
-async function runAction(message: string, action: () => Promise<any>, successMessage: string) {
-  try {
-    await dialog.confirm({ title: '提示', msg: message })
-  } catch {
-    return
-  }
-  actionLoading.value = true
-  try {
-    await action()
-    toast.success(successMessage)
-    uni.$emit('crm:contract:reload')
-    await getDetail()
-  } finally {
-    actionLoading.value = false
-  }
-}
-
 /** 业务操作菜单选择 */
 function handleMoreAction({ item }: { item: { value: string } }) {
   const handlers: Record<string, () => void> = {
@@ -307,12 +255,21 @@ function handleTransfer() {
 }
 
 /** 提交审核 */
-function handleSubmit() {
-  runAction(
-    `确定提交合同【${formData.value.name || formData.value.no || ''}】审核吗？`,
-    () => submitContract(contractId.value),
-    '提交审核成功',
-  )
+async function handleSubmit() {
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定提交合同【${formData.value.name || formData.value.no || ''}】审核吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await submitContract(contractId.value)
+    toast.success('提交审核成功')
+    uni.$emit('crm:contract:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 查看审批 */

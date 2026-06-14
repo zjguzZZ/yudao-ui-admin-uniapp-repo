@@ -33,6 +33,7 @@
     </wd-popup>
 
     <!-- 产品分类列表 -->
+    <!-- TODO @AI：看看能不能参考 dept 之类的做？！ -->
     <z-paging
       ref="pagingRef"
       v-model="list"

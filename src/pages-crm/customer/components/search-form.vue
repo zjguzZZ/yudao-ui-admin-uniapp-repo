@@ -71,14 +71,21 @@ const dictFilters = [
 
 const visible = ref(false) // 搜索弹窗显示状态
 const pickerVisible = reactive<Record<string, boolean>>({}) // 字典选择器显示状态
-// TODO @AI：这个下面是不是要换行？name、mobile、source、industryId 这种？可以写到 agents.md 里
-const formData = reactive<Record<string, any>>({ name: undefined, mobile: undefined, source: -1, industryId: -1, level: -1 }) // 搜索表单数据
+const formData = reactive<Record<string, any>>({
+  name: undefined,
+  mobile: undefined,
+  source: -1,
+  industryId: -1,
+  level: -1,
+}) // 搜索表单数据
 const placeholder = ref('搜索客户') // 搜索框占位
 
 /** 字典选项（含「全部」） */
-// TODO @AI：这个换行，是不是也要搞下？参考下别的 search 组件；
 function getDictColumns(dictType: string) {
-  return [{ label: '全部', value: -1 }, ...getIntDictOptions(dictType)]
+  return [
+    { label: '全部', value: -1 },
+    ...getIntDictOptions(dictType),
+  ]
 }
 
 /** 字典当前展示文案 */

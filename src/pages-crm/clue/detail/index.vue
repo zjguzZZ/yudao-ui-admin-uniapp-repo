@@ -16,13 +16,34 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell v-if="field.dictType" :title="field.label">
-          <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="formData[field.prop]" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="线索名称" :value="formData.name || '-'" />
+      <wd-cell title="客户来源">
+        <dict-tag v-if="formData.source != null && formData.source !== ''" :type="DICT_TYPE.CRM_CUSTOMER_SOURCE" :value="formData.source" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="手机" :value="formData.mobile || '-'" />
+      <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+      <wd-cell title="电话" :value="formData.telephone || '-'" />
+      <wd-cell title="邮箱" :value="formData.email || '-'" />
+      <wd-cell title="微信" :value="formData.wechat || '-'" />
+      <wd-cell title="QQ" :value="formData.qq || '-'" />
+      <wd-cell title="客户行业">
+        <dict-tag v-if="formData.industryId != null && formData.industryId !== ''" :type="DICT_TYPE.CRM_CUSTOMER_INDUSTRY" :value="formData.industryId" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="客户级别">
+        <dict-tag v-if="formData.level != null && formData.level !== ''" :type="DICT_TYPE.CRM_CUSTOMER_LEVEL" :value="formData.level" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="地区" :value="formData.areaName || '-'" />
+      <wd-cell title="详细地址" :value="formData.detailAddress || '-'" />
+      <wd-cell title="下次联系时间" :value="formatDateTime(formData.contactNextTime) || '-'" />
+      <wd-cell title="最后跟进时间" :value="formatDateTime(formData.contactLastTime) || '-'" />
+      <wd-cell title="最后跟进内容" :value="formData.contactLastContent || '-'" />
+      <wd-cell title="备注" :value="formData.remark || '-'" />
+      <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
+      <wd-cell title="转化状态" :value="formData.transformStatus ? '是' : '否'" />
+      <wd-cell title="转化客户" :value="formData.customerName || '-'" />
     </wd-cell-group>
 
     <!-- 跟进记录 -->
@@ -102,29 +123,6 @@ const tabs: { key: string, title: string }[] = [
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'bool' | 'datetime' }[] = [ // 基本信息字段
-  { label: '线索名称', prop: 'name' },
-  { label: '客户来源', prop: 'source', dictType: DICT_TYPE.CRM_CUSTOMER_SOURCE },
-  { label: '手机', prop: 'mobile' },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '电话', prop: 'telephone' },
-  { label: '邮箱', prop: 'email' },
-  { label: '微信', prop: 'wechat' },
-  { label: 'QQ', prop: 'qq' },
-  { label: '客户行业', prop: 'industryId', dictType: DICT_TYPE.CRM_CUSTOMER_INDUSTRY },
-  { label: '客户级别', prop: 'level', dictType: DICT_TYPE.CRM_CUSTOMER_LEVEL },
-  { label: '地区', prop: 'areaName' },
-  { label: '详细地址', prop: 'detailAddress' },
-  { label: '下次联系时间', prop: 'contactNextTime', type: 'datetime' },
-  { label: '最后跟进时间', prop: 'contactLastTime', type: 'datetime' },
-  { label: '最后跟进内容', prop: 'contactLastContent' },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-  { label: '转化状态', prop: 'transformStatus', type: 'bool' },
-  { label: '转化客户', prop: 'customerName' },
-]
-
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
@@ -170,29 +168,6 @@ const hasFooter = computed(() => {
   }
 })
 
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = formData.value[prop]
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'bool' | 'datetime' }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'bool') {
-    return value ? '是' : '否'
-  }
-  return String(value)
-}
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-crm/clue/index')
@@ -211,25 +186,6 @@ async function getDetail() {
   }
 }
 
-// TODO @AI：不要搞这样的封装，每个自己写！
-/** 执行业务操作（确认 → 调用 → 刷新） */
-async function runAction(message: string, action: () => Promise<any>, successMessage: string) {
-  try {
-    await dialog.confirm({ title: '提示', msg: message })
-  } catch {
-    return
-  }
-  actionLoading.value = true
-  try {
-    await action()
-    toast.success(successMessage)
-    uni.$emit('crm:clue:reload')
-    await getDetail()
-  } finally {
-    actionLoading.value = false
-  }
-}
-
 /** 业务操作菜单选择 */
 function handleMoreAction({ item }: { item: { value: string } }) {
   const handlers: Record<string, () => void> = {
@@ -245,12 +201,21 @@ function handleTransfer() {
 }
 
 /** 转化为客户 */
-function handleTransform() {
-  runAction(
-    `确定将线索【${formData.value.name || ''}】转化为客户吗？`,
-    () => transformClue(clueId.value),
-    '转化成功',
-  )
+async function handleTransform() {
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定将线索【${formData.value.name || ''}】转化为客户吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await transformClue(clueId.value)
+    toast.success('转化成功')
+    uni.$emit('crm:clue:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 退出团队后返回 */

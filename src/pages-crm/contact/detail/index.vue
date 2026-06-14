@@ -16,13 +16,28 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell v-if="field.dictType" :title="field.label">
-          <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="formData[field.prop]" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="联系人姓名" :value="formData.name || '-'" />
+      <wd-cell title="客户名称" :value="formData.customerName || '-'" />
+      <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+      <wd-cell title="手机" :value="formData.mobile || '-'" />
+      <wd-cell title="电话" :value="formData.telephone || '-'" />
+      <wd-cell title="邮箱" :value="formData.email || '-'" />
+      <wd-cell title="微信" :value="formData.wechat || '-'" />
+      <wd-cell title="QQ" :value="formData.qq || '-'" />
+      <wd-cell title="职位" :value="formData.post || '-'" />
+      <wd-cell title="关键决策人" :value="formData.master ? '是' : '否'" />
+      <wd-cell title="性别">
+        <dict-tag v-if="formData.sex != null && formData.sex !== ''" :type="DICT_TYPE.SYSTEM_USER_SEX" :value="formData.sex" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="直属上级" :value="formData.parentName || '-'" />
+      <wd-cell title="地区" :value="formData.areaName || '-'" />
+      <wd-cell title="详细地址" :value="formData.detailAddress || '-'" />
+      <wd-cell title="下次联系时间" :value="formatDateTime(formData.contactNextTime) || '-'" />
+      <wd-cell title="最后跟进时间" :value="formatDateTime(formData.contactLastTime) || '-'" />
+      <wd-cell title="最后跟进内容" :value="formData.contactLastContent || '-'" />
+      <wd-cell title="备注" :value="formData.remark || '-'" />
+      <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
     </wd-cell-group>
 
     <!-- 跟进记录 -->
@@ -107,28 +122,6 @@ const tabs: { key: string, title: string }[] = [ // tab 配置
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'bool' | 'datetime' }[] = [ // 基本信息字段
-  { label: '联系人姓名', prop: 'name' },
-  { label: '客户名称', prop: 'customerName' },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '手机', prop: 'mobile' },
-  { label: '电话', prop: 'telephone' },
-  { label: '邮箱', prop: 'email' },
-  { label: '微信', prop: 'wechat' },
-  { label: 'QQ', prop: 'qq' },
-  { label: '职位', prop: 'post' },
-  { label: '关键决策人', prop: 'master', type: 'bool' },
-  { label: '性别', prop: 'sex', dictType: DICT_TYPE.SYSTEM_USER_SEX },
-  { label: '直属上级', prop: 'parentName' },
-  { label: '地区', prop: 'areaName' },
-  { label: '详细地址', prop: 'detailAddress' },
-  { label: '下次联系时间', prop: 'contactNextTime', type: 'datetime' },
-  { label: '最后跟进时间', prop: 'contactLastTime', type: 'datetime' },
-  { label: '最后跟进内容', prop: 'contactLastContent' },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-]
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -167,29 +160,6 @@ const hasFooter = computed(() => {
       return false
   }
 })
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = formData.value[prop]
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'bool' | 'datetime' }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'bool') {
-    return value ? '是' : '否'
-  }
-  return String(value)
-}
 
 /** 返回上一页 */
 function handleBack() {

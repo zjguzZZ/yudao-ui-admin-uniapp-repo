@@ -16,13 +16,21 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell v-if="field.dictType" :title="field.label">
-          <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="getValue(field.prop)" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="客户名称" :value="formData.customerName || '-'" />
+      <wd-cell title="合同编号" :value="formData.contractNo || '-'" />
+      <wd-cell title="期数" :value="formData.period || '-'" />
+      <wd-cell title="计划回款金额" :value="formData.price != null && formData.price !== '' ? Number(formData.price).toFixed(2) : '-'" />
+      <wd-cell title="计划回款日期" :value="formatDate(formData.returnTime) || '-'" />
+      <wd-cell title="提前提醒天数" :value="formData.remindDays || '-'" />
+      <wd-cell title="回款方式">
+        <dict-tag v-if="formData.returnType != null && formData.returnType !== ''" :type="DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE" :value="formData.returnType" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+      <wd-cell title="实际回款金额" :value="formData.receivable?.price != null && formData.receivable?.price !== '' ? Number(formData.receivable.price).toFixed(2) : '-'" />
+      <wd-cell title="实际回款日期" :value="formatDate(formData.receivable?.returnTime) || '-'" />
+      <wd-cell title="备注" :value="formData.remark || '-'" />
+      <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
     </wd-cell-group>
 
     <!-- 团队成员 -->
@@ -90,21 +98,6 @@ const tabs: { key: string, title: string }[] = [
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'date' | 'datetime' | 'money' }[] = [ // 基本信息字段
-  { label: '客户名称', prop: 'customerName' },
-  { label: '合同编号', prop: 'contractNo' },
-  { label: '期数', prop: 'period' },
-  { label: '计划回款金额', prop: 'price', type: 'money' },
-  { label: '计划回款日期', prop: 'returnTime', type: 'date' },
-  { label: '提前提醒天数', prop: 'remindDays' },
-  { label: '回款方式', prop: 'returnType', dictType: DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '实际回款金额', prop: 'receivable.price', type: 'money' },
-  { label: '实际回款日期', prop: 'receivable.returnTime', type: 'date' },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-]
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -143,38 +136,6 @@ const hasFooter = computed(() => {
       return false
   }
 })
-
-/** 获取对象路径值 */
-function getValue(prop: string) {
-  return prop.split('.').reduce((value: any, key) => value?.[key], formData.value)
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = getValue(prop)
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'date' | 'datetime' | 'money' }) {
-  const value = getValue(field.prop)
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'date') {
-    return formatDate(value) || '-'
-  }
-  if (field.type === 'money') {
-    const amount = Number(value)
-    return Number.isNaN(amount) ? String(value) : amount.toFixed(2)
-  }
-  return String(value)
-}
 
 /** 返回上一页 */
 function handleBack() {

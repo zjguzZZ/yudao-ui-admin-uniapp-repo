@@ -16,13 +16,22 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell v-if="field.dictType" :title="field.label">
-          <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="getValue(field.prop)" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="回款编号" :value="formData.no || '-'" />
+      <wd-cell title="客户名称" :value="formData.customerName || '-'" />
+      <wd-cell title="合同名称" :value="formData.contract?.name || '-'" />
+      <wd-cell title="回款方式">
+        <dict-tag v-if="formData.returnType != null && formData.returnType !== ''" :type="DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE" :value="formData.returnType" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="回款金额" :value="formData.price != null && formData.price !== '' ? Number(formData.price).toFixed(2) : '-'" />
+      <wd-cell title="回款日期" :value="formatDate(formData.returnTime) || '-'" />
+      <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+      <wd-cell title="审批状态">
+        <dict-tag v-if="formData.auditStatus != null && formData.auditStatus !== ''" :type="DICT_TYPE.CRM_AUDIT_STATUS" :value="formData.auditStatus" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="备注" :value="formData.remark || '-'" />
+      <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
     </wd-cell-group>
 
     <!-- 团队成员 -->
@@ -90,19 +99,6 @@ const tabs: { key: string, title: string }[] = [
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'date' | 'datetime' | 'money' }[] = [ // 基本信息字段
-  { label: '回款编号', prop: 'no' },
-  { label: '客户名称', prop: 'customerName' },
-  { label: '合同名称', prop: 'contract.name' },
-  { label: '回款方式', prop: 'returnType', dictType: DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE },
-  { label: '回款金额', prop: 'price', type: 'money' },
-  { label: '回款日期', prop: 'returnTime', type: 'date' },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '审批状态', prop: 'auditStatus', dictType: DICT_TYPE.CRM_AUDIT_STATUS },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-]
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -142,38 +138,6 @@ const hasFooter = computed(() => {
   }
 })
 
-/** 获取对象路径值 */
-function getValue(prop: string) {
-  return prop.split('.').reduce((value: any, key) => value?.[key], formData.value)
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = getValue(prop)
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'date' | 'datetime' | 'money' }) {
-  const value = getValue(field.prop)
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'date') {
-    return formatDate(value) || '-'
-  }
-  if (field.type === 'money') {
-    const amount = Number(value)
-    return Number.isNaN(amount) ? String(value) : amount.toFixed(2)
-  }
-  return String(value)
-}
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-crm/receivable/index')
@@ -192,25 +156,6 @@ async function getDetail() {
   }
 }
 
-// TODO @AI：不要搞这样的封装，每个自己写！
-/** 执行业务操作（确认 → 调用 → 刷新） */
-async function runAction(message: string, action: () => Promise<any>, successMessage: string) {
-  try {
-    await dialog.confirm({ title: '提示', msg: message })
-  } catch {
-    return
-  }
-  actionLoading.value = true
-  try {
-    await action()
-    toast.success(successMessage)
-    uni.$emit('crm:receivable:reload')
-    await getDetail()
-  } finally {
-    actionLoading.value = false
-  }
-}
-
 /** 业务操作菜单选择 */
 function handleMoreAction({ item }: { item: { value: string } }) {
   const handlers: Record<string, () => void> = {
@@ -221,12 +166,21 @@ function handleMoreAction({ item }: { item: { value: string } }) {
 }
 
 /** 提交审核 */
-function handleSubmitAudit() {
-  runAction(
-    `确定提交回款【${formData.value.no || ''}】审核吗？`,
-    () => submitReceivable(receivableId.value),
-    '提交审核成功',
-  )
+async function handleSubmitAudit() {
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定提交回款【${formData.value.no || ''}】审核吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await submitReceivable(receivableId.value)
+    toast.success('提交审核成功')
+    uni.$emit('crm:receivable:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 查看审批 */

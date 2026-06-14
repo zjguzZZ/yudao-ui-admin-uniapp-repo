@@ -16,20 +16,40 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell v-if="field.dictType" :title="field.label">
-          <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="formData[field.prop]" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="客户名称" :value="formData.name || '-'" />
+      <wd-cell title="客户来源">
+        <dict-tag v-if="formData.source != null && formData.source !== ''" :type="DICT_TYPE.CRM_CUSTOMER_SOURCE" :value="formData.source" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="手机" :value="formData.mobile || '-'" />
+      <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+      <wd-cell title="电话" :value="formData.telephone || '-'" />
+      <wd-cell title="邮箱" :value="formData.email || '-'" />
+      <wd-cell title="微信" :value="formData.wechat || '-'" />
+      <wd-cell title="QQ" :value="formData.qq || '-'" />
+      <wd-cell title="客户行业">
+        <dict-tag v-if="formData.industryId != null && formData.industryId !== ''" :type="DICT_TYPE.CRM_CUSTOMER_INDUSTRY" :value="formData.industryId" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="客户级别">
+        <dict-tag v-if="formData.level != null && formData.level !== ''" :type="DICT_TYPE.CRM_CUSTOMER_LEVEL" :value="formData.level" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="地区" :value="formData.areaName || '-'" />
+      <wd-cell title="详细地址" :value="formData.detailAddress || '-'" />
+      <wd-cell title="下次联系时间" :value="formatDateTime(formData.contactNextTime) || '-'" />
+      <wd-cell title="最后跟进时间" :value="formatDateTime(formData.contactLastTime) || '-'" />
+      <wd-cell title="最后跟进内容" :value="formData.contactLastContent || '-'" />
+      <wd-cell title="备注" :value="formData.remark || '-'" />
+      <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
+      <wd-cell title="锁定状态" :value="formData.lockStatus ? '是' : '否'" />
+      <wd-cell title="成交状态" :value="formData.dealStatus ? '是' : '否'" />
     </wd-cell-group>
 
     <!-- 跟进记录 -->
     <CrmFollowupRecords v-else-if="activeTab === 'followup' && customerId" ref="followupRef" embedded :biz-id="customerId" :biz-type="bizType" />
 
     <!-- 团队成员 -->
-    <!--  TODO @AI：编辑的时候，crm 类型不能为空 -->
     <CrmPermissionTeam v-else-if="activeTab === 'team' && customerId" ref="teamRef" embedded :biz-id="customerId" :biz-type="bizType" @quit-team="handleQuitTeam" @can-quit-change="(v: boolean) => teamCanQuit = v" />
 
     <!-- 操作日志 -->
@@ -136,7 +156,6 @@ definePage({
 })
 
 const bizType = BizTypeEnum.CRM_CUSTOMER
-// TODO @AI：这种顺序，应该和 vue3 + ep 一致，除了【基础信息】在前面以外；别的模块一起看下；
 const tabs: { key: string, title: string, addLabel?: string, addPermission?: string }[] = [
   { key: 'basic', title: '基本信息' },
   { key: 'followup', title: '跟进记录' },
@@ -148,28 +167,6 @@ const tabs: { key: string, title: string, addLabel?: string, addPermission?: str
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ] // tab 配置；关联 tab 带「新增」标签与权限（底部操作用）
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'bool' | 'datetime' }[] = [ // 基本信息字段
-  { label: '客户名称', prop: 'name' },
-  { label: '客户来源', prop: 'source', dictType: DICT_TYPE.CRM_CUSTOMER_SOURCE },
-  { label: '手机', prop: 'mobile' },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '电话', prop: 'telephone' },
-  { label: '邮箱', prop: 'email' },
-  { label: '微信', prop: 'wechat' },
-  { label: 'QQ', prop: 'qq' },
-  { label: '客户行业', prop: 'industryId', dictType: DICT_TYPE.CRM_CUSTOMER_INDUSTRY },
-  { label: '客户级别', prop: 'level', dictType: DICT_TYPE.CRM_CUSTOMER_LEVEL },
-  { label: '地区', prop: 'areaName' },
-  { label: '详细地址', prop: 'detailAddress' },
-  { label: '下次联系时间', prop: 'contactNextTime', type: 'datetime' },
-  { label: '最后跟进时间', prop: 'contactLastTime', type: 'datetime' },
-  { label: '最后跟进内容', prop: 'contactLastContent' },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-  { label: '锁定状态', prop: 'lockStatus', type: 'bool' },
-  { label: '成交状态', prop: 'dealStatus', type: 'bool' },
-]
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -230,29 +227,6 @@ const hasFooter = computed(() => {
   }
 })
 
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = formData.value[prop]
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'bool' | 'datetime' }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'bool') {
-    return value ? '是' : '否'
-  }
-  return String(value)
-}
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-crm/customer/index')
@@ -268,29 +242,6 @@ async function getDetail() {
     formData.value = await getCustomer(customerId.value)
   } finally {
     toast.close()
-  }
-}
-
-// TODO @AI：不要搞这样的封装，每个自己写！
-/** 执行业务操作（确认 → 调用 → 刷新） */
-async function runAction(message: string, action: () => Promise<any>, successMessage: string, options: { back?: boolean } = {}) {
-  try {
-    await dialog.confirm({ title: '提示', msg: message })
-  } catch {
-    return
-  }
-  actionLoading.value = true
-  try {
-    await action()
-    toast.success(successMessage)
-    uni.$emit('crm:customer:reload')
-    if (options.back) {
-      setTimeout(() => handleBack(), 500)
-    } else {
-      await getDetail()
-    }
-  } finally {
-    actionLoading.value = false
   }
 }
 
@@ -313,32 +264,59 @@ function handleTransfer() {
 }
 
 /** 更新成交状态 */
-function handleUpdateDealStatus() {
+async function handleUpdateDealStatus() {
   const nextStatus = !formData.value.dealStatus
-  runAction(
-    `确定更新成交状态为【${nextStatus ? '已成交' : '未成交'}】吗？`,
-    () => updateCustomerDealStatus(customerId.value, nextStatus),
-    '更新成交状态成功',
-  )
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定更新成交状态为【${nextStatus ? '已成交' : '未成交'}】吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await updateCustomerDealStatus(customerId.value, nextStatus)
+    toast.success('更新成交状态成功')
+    uni.$emit('crm:customer:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 锁定或解锁客户 */
-function handleToggleLock() {
+async function handleToggleLock() {
   const nextStatus = !formData.value.lockStatus
-  runAction(
-    `确定${nextStatus ? '锁定' : '解锁'}客户【${formData.value.name || ''}】吗？`,
-    () => lockCustomer(customerId.value, nextStatus),
-    `${nextStatus ? '锁定' : '解锁'}成功`,
-  )
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定${nextStatus ? '锁定' : '解锁'}客户【${formData.value.name || ''}】吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await lockCustomer(customerId.value, nextStatus)
+    toast.success(`${nextStatus ? '锁定' : '解锁'}成功`)
+    uni.$emit('crm:customer:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 领取客户 */
-function handleReceive() {
-  runAction(
-    `确定领取客户【${formData.value.name || ''}】吗？`,
-    () => receiveCustomer([customerId.value]),
-    '领取成功',
-  )
+async function handleReceive() {
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定领取客户【${formData.value.name || ''}】吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await receiveCustomer([customerId.value])
+    toast.success('领取成功')
+    uni.$emit('crm:customer:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 打开分配客户弹窗 */
@@ -366,13 +344,21 @@ async function handleDistributeSubmit() {
 }
 
 /** 放入公海 */
-function handlePutPool() {
-  runAction(
-    `确定将客户【${formData.value.name || ''}】放入公海吗？`,
-    () => putCustomerPool(customerId.value),
-    '放入公海成功',
-    { back: true },
-  )
+async function handlePutPool() {
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定将客户【${formData.value.name || ''}】放入公海吗？` })
+  } catch {
+    return
+  }
+  actionLoading.value = true
+  try {
+    await putCustomerPool(customerId.value)
+    toast.success('放入公海成功')
+    uni.$emit('crm:customer:reload')
+    setTimeout(() => handleBack(), 500)
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 退出团队后返回 */

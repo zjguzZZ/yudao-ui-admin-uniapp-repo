@@ -16,13 +16,19 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell v-if="field.dictType" :title="field.label">
-          <dict-tag v-if="hasValue(field.prop)" :type="field.dictType" :value="formData[field.prop]" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell v-else :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="产品名称" :value="formData.name || '-'" />
+      <wd-cell title="产品编码" :value="formData.no || '-'" />
+      <wd-cell title="产品分类" :value="formData.categoryName || '-'" />
+      <wd-cell title="产品单位">
+        <dict-tag v-if="formData.unit != null && formData.unit !== ''" :type="DICT_TYPE.CRM_PRODUCT_UNIT" :value="formData.unit" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="价格" :value="formData.price != null && formData.price !== '' ? Number(formData.price).toFixed(2) : '-'" />
+      <wd-cell title="上架状态">
+        <dict-tag v-if="formData.status != null && formData.status !== ''" :type="DICT_TYPE.CRM_PRODUCT_STATUS" :value="formData.status" />
+        <text v-else>-</text>
+      </wd-cell>
+      <wd-cell title="产品描述" :value="formData.description || '-'" />
     </wd-cell-group>
 
     <!-- 操作日志 -->
@@ -70,17 +76,6 @@ const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, dictType?: string, type?: 'money' }[] = [ // 基本信息字段
-  { label: '产品名称', prop: 'name' },
-  { label: '产品编码', prop: 'no' },
-  { label: '产品分类', prop: 'categoryName' },
-  { label: '产品单位', prop: 'unit', dictType: DICT_TYPE.CRM_PRODUCT_UNIT },
-  { label: '价格', prop: 'price', type: 'money' },
-  { label: '上架状态', prop: 'status', dictType: DICT_TYPE.CRM_PRODUCT_STATUS },
-  { label: '产品描述', prop: 'description' },
-]
-
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
@@ -101,27 +96,6 @@ const hasFooter = computed(() => {
       return false
   }
 })
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 字段是否有值 */
-function hasValue(prop: string) {
-  const value = formData.value[prop]
-  return value !== undefined && value !== null && value !== ''
-}
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'money' }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'money') {
-    const amount = Number(value)
-    return Number.isNaN(amount) ? String(value) : amount.toFixed(2)
-  }
-  return String(value)
-}
 
 /** 返回上一页 */
 function handleBack() {

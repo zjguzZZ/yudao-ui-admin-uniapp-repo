@@ -288,6 +288,7 @@ async function handleSubmit() {
     } else {
       await updatePermission({
         ids: formData.value.ids,
+        bizType: props.bizType,
         level: formData.value.level,
       })
       toast.success('修改成功')

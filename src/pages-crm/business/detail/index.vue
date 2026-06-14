@@ -8,6 +8,7 @@
     />
 
     <!-- 详情分类 -->
+    <!-- TODO @AI：tabs 都是 。。。customer detail 是不会的。 -->
     <view class="bg-white">
       <wd-tabs v-model="tabIndex">
         <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
@@ -17,7 +18,16 @@
     <!-- 基本信息 -->
     <template v-if="activeTab === 'basic'">
       <wd-cell-group border>
-        <wd-cell v-for="field in detailFields" :key="field.prop" :title="field.label" :value="formatValue(field)" />
+        <wd-cell title="商机名称" :value="formData.name || '-'" />
+        <wd-cell title="客户名称" :value="formData.customerName || '-'" />
+        <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
+        <wd-cell title="商机状态组" :value="formData.statusTypeName || '-'" />
+        <wd-cell title="商机阶段" :value="formData.statusName || '-'" />
+        <wd-cell title="预计成交日期" :value="formatDate(formData.dealTime) || '-'" />
+        <wd-cell title="商机金额" :value="formData.totalPrice != null && formData.totalPrice !== '' ? formatMoney(formData.totalPrice) : '-'" />
+        <wd-cell title="整单折扣(%)" :value="formData.discountPercent || '-'" />
+        <wd-cell title="备注" :value="formData.remark || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
       </wd-cell-group>
 
       <!-- 产品清单（只读） -->
@@ -146,20 +156,6 @@ const tabs: { key: string, title: string }[] = [ // tab 配置
   { key: 'contracts', title: '合同' },
   { key: 'log', title: '操作日志' },
 ]
-// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
-const detailFields: { label: string, prop: string, type?: 'date' | 'datetime' | 'money' }[] = [ // 基本信息字段
-  { label: '商机名称', prop: 'name' },
-  { label: '客户名称', prop: 'customerName' },
-  { label: '负责人', prop: 'ownerUserName' },
-  { label: '商机状态组', prop: 'statusTypeName' },
-  { label: '商机阶段', prop: 'statusName' },
-  { label: '预计成交日期', prop: 'dealTime', type: 'date' },
-  { label: '商机金额', prop: 'totalPrice', type: 'money' },
-  { label: '整单折扣(%)', prop: 'discountPercent' },
-  { label: '备注', prop: 'remark' },
-  { label: '创建时间', prop: 'createTime', type: 'datetime' },
-]
-
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
@@ -208,25 +204,6 @@ const hasFooter = computed(() => {
       return false
   }
 })
-
-// TODO @AI：如果上面的放到 html 里，这里就不需要了。
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string, type?: 'date' | 'datetime' | 'money' }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  if (field.type === 'datetime') {
-    return formatDateTime(value) || '-'
-  }
-  if (field.type === 'date') {
-    return formatDate(value) || '-'
-  }
-  if (field.type === 'money') {
-    return formatMoney(value)
-  }
-  return String(value)
-}
 
 /** 格式化金额 */
 function formatMoney(value: any) {

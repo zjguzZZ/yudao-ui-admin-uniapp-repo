@@ -84,11 +84,13 @@ definePage({
 })
 
 const bizType = BizTypeEnum.CRM_RECEIVABLE
+// TODO @AI：这种顺序，应该和 vue3 + ep 一致，除了【基础信息】在前面以外；别的模块一起看下；
 const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ]
+// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
 const detailFields: { label: string, prop: string, dictType?: string, type?: 'date' | 'datetime' | 'money' }[] = [ // 基本信息字段
   { label: '回款编号', prop: 'no' },
   { label: '客户名称', prop: 'customerName' },
@@ -145,12 +147,14 @@ function getValue(prop: string) {
   return prop.split('.').reduce((value: any, key) => value?.[key], formData.value)
 }
 
+// TODO @AI：如果上面的放到 html 里，这里就不需要了。
 /** 字段是否有值 */
 function hasValue(prop: string) {
   const value = getValue(prop)
   return value !== undefined && value !== null && value !== ''
 }
 
+// TODO @AI：如果上面的放到 html 里，这里就不需要了。
 /** 格式化基本信息字段值 */
 function formatValue(field: { prop: string, type?: 'date' | 'datetime' | 'money' }) {
   const value = getValue(field.prop)
@@ -188,6 +192,7 @@ async function getDetail() {
   }
 }
 
+// TODO @AI：不要搞这样的封装，每个自己写！
 /** 执行业务操作（确认 → 调用 → 刷新） */
 async function runAction(message: string, action: () => Promise<any>, successMessage: string) {
   try {

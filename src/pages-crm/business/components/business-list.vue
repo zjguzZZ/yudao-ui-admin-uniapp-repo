@@ -39,6 +39,7 @@ async function getList() {
   }
   loading.value = true
   try {
+    // TODO @AI：这里是不是有换行风格？
     const data = await getBusinessPageByCustomer({ pageNo: 1, pageSize: 20, customerId: props.customerId })
     list.value = data.list
   } catch {

@@ -42,6 +42,7 @@ async function getList() {
   }
   loading.value = true
   try {
+    // TODO @AI：这里是不是有换行风格？
     const data = await getReceivablePlanPageByCustomer({ pageNo: 1, pageSize: 20, customerId: props.customerId, contractId: props.contractId })
     list.value = data.list
   } catch {

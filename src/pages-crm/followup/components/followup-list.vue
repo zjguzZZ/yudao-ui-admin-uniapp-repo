@@ -7,12 +7,11 @@
         写跟进
       </wd-button>
     </view>
-    <!-- TODO @AI：是不是应该参考别的，list 风格，优化下。每个都是小卡片，好区分一点。 -->
-    <view class="bg-white">
+    <view class="p-24rpx pb-160rpx">
       <view
         v-for="item in list"
         :key="item.id"
-        class="border-b border-[#f5f5f5] p-24rpx"
+        class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
       >
         <view class="mb-12rpx flex items-center justify-between gap-16rpx">
           <view class="min-w-0 flex-1 text-28rpx text-[#333] font-semibold">

@@ -95,6 +95,7 @@ const toast = useToast()
 const userStore = useUserStore()
 const getTitle = computed(() => props.id ? '编辑商机' : '新增商机')
 const formLoading = ref(false) // 表单提交状态
+// TODO @AI：formData 参考下别的 form 组件；user form
 const formData = ref<Business & Record<string, any>>({ name: '', customerId: undefined, ownerUserId: undefined, discountPercent: 0, products: [] }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
@@ -169,6 +170,7 @@ async function handleSubmit() {
 /** 初始化 */
 onMounted(() => {
   applyQueryDefaults()
+  // TODO @AI：需要 await？看看别的模块，是不是也有类似问题！
   getDetail()
 })
 </script>

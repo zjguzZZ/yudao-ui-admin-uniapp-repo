@@ -65,10 +65,12 @@ definePage({
 })
 
 const bizType = BizTypeEnum.CRM_PRODUCT
+// TODO @AI：这种顺序，应该和 vue3 + ep 一致，除了【基础信息】在前面以外；别的模块一起看下；
 const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
   { key: 'log', title: '操作日志' },
 ]
+// TODO @AI：detailFields 不太对；参考 vue3 + ep 的做法，以及 admin uniapp 的做法，应该直接写在 html 里；
 const detailFields: { label: string, prop: string, dictType?: string, type?: 'money' }[] = [ // 基本信息字段
   { label: '产品名称', prop: 'name' },
   { label: '产品编码', prop: 'no' },
@@ -100,12 +102,14 @@ const hasFooter = computed(() => {
   }
 })
 
+// TODO @AI：如果上面的放到 html 里，这里就不需要了。
 /** 字段是否有值 */
 function hasValue(prop: string) {
   const value = formData.value[prop]
   return value !== undefined && value !== null && value !== ''
 }
 
+// TODO @AI：如果上面的放到 html 里，这里就不需要了。
 /** 格式化基本信息字段值 */
 function formatValue(field: { prop: string, type?: 'money' }) {
   const value = formData.value[field.prop]

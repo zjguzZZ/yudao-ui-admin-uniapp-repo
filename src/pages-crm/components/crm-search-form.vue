@@ -1,3 +1,4 @@
+<!-- TODO @AI：是不是自己模块里写？不用这么封装 -->
 <template>
   <!-- 搜索框入口 -->
   <view @click="visible = true">
@@ -21,8 +22,35 @@
         <view class="yd-search-form-label">
           {{ field.label }}
         </view>
+        <template v-if="field.searchType === 'dateRange'">
+          <view class="yd-search-form-date-range-container">
+            <view class="flex-1" @click="dateVisible[`${field.prop}:start`] = true">
+              <view class="yd-search-form-date-range-picker">
+                {{ formatDate(formData[field.prop]?.[0]) || '开始日期' }}
+              </view>
+            </view>
+            -
+            <view class="flex-1" @click="dateVisible[`${field.prop}:end`] = true">
+              <view class="yd-search-form-date-range-picker">
+                {{ formatDate(formData[field.prop]?.[1]) || '结束日期' }}
+              </view>
+            </view>
+          </view>
+          <wd-datetime-picker
+            v-model="formData[field.prop][0]"
+            v-model:visible="dateVisible[`${field.prop}:start`]"
+            title="请选择开始日期"
+            type="date"
+          />
+          <wd-datetime-picker
+            v-model="formData[field.prop][1]"
+            v-model:visible="dateVisible[`${field.prop}:end`]"
+            title="请选择结束日期"
+            type="date"
+          />
+        </template>
         <wd-input
-          v-if="isTextField(field)"
+          v-else-if="isTextField(field)"
           v-model="formData[field.prop]"
           :placeholder="field.placeholder || `请输入${field.label}`"
           clearable
@@ -71,6 +99,7 @@ import { computed, reactive, watch } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { formatDate, formatDateRange } from '@/utils/date'
 import CrmPicker from './crm-picker.vue'
 
 const props = defineProps<{
@@ -85,13 +114,22 @@ const emit = defineEmits<{
 
 const visible = defineModel<boolean>('visible', { default: false })
 const formData = reactive<Record<string, any>>({}) // 搜索表单数据
+const dateVisible = reactive<Record<string, boolean>>({}) // 日期选择器显示状态
+
+/** 获取搜索字段默认值 */
+function getFieldDefault(field: CrmFieldConfig) {
+  if (field.searchType === 'dateRange') {
+    return ['', '']
+  }
+  return field.type === 'dict' ? -1 : undefined
+}
 
 /** 初始化搜索字段 */
 watch(
   () => props.fields,
   () => {
     props.fields.forEach((field) => {
-      formData[field.prop] = field.type === 'dict' ? -1 : undefined
+      formData[field.prop] = getFieldDefault(field)
     })
   },
   { immediate: true },
@@ -102,6 +140,12 @@ const placeholder = computed(() => {
   const conditions: string[] = []
   props.fields.forEach((field) => {
     const value = formData[field.prop]
+    if (field.searchType === 'dateRange') {
+      if (Array.isArray(value) && value[0] && value[1]) {
+        conditions.push(`${field.label}:${formatDate(value[0])}~${formatDate(value[1])}`)
+      }
+      return
+    }
     if (value === undefined || value === '' || value === null || value === -1) {
       return
     }
@@ -134,6 +178,12 @@ function buildQueryData() {
   const data: Record<string, any> = {}
   props.fields.forEach((field) => {
     const value = formData[field.prop]
+    if (field.searchType === 'dateRange') {
+      if (Array.isArray(value) && value[0] && value[1]) {
+        data[field.prop] = formatDateRange([value[0], value[1]])
+      }
+      return
+    }
     if (value === undefined || value === '' || value === null || value === -1) {
       return
     }
@@ -151,7 +201,7 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   props.fields.forEach((field) => {
-    formData[field.prop] = field.type === 'dict' ? -1 : undefined
+    formData[field.prop] = getFieldDefault(field)
   })
   visible.value = false
   emit('reset')

@@ -1,3 +1,4 @@
+<!-- TODO @AI：和 vue3 + ep，不过度封装！每个模块自己写； -->
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
@@ -109,6 +110,17 @@
               type="radio"
               :label="field.label"
               :prop="field.prop"
+              :disabled="isFieldDisabled(field)"
+              :placeholder="field.placeholder || `请选择${field.label}`"
+            />
+            <YdTreeSelect
+              v-else-if="field.type === 'area'"
+              v-model="formData[field.prop]"
+              :data="areaTree"
+              :label="field.label"
+              :prop="field.prop"
+              label-width="200rpx"
+              :disabled="isFieldDisabled(field)"
               :placeholder="field.placeholder || `请选择${field.label}`"
             />
             <CrmPicker
@@ -118,8 +130,10 @@
               :label="field.label"
               :prop="field.prop"
               :params="getPickerParams(field)"
+              :disabled="isFieldDisabled(field)"
+              :option-filter="field.optionFilter"
               :placeholder="field.placeholder || `请选择${field.label}`"
-              @confirm="handlePickerConfirm(field)"
+              @confirm="(option) => handlePickerConfirm(field, option)"
             />
           </template>
         </wd-cell-group>
@@ -153,8 +167,11 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { CrmEntityConfig, CrmFieldConfig } from '@/pages-crm/config/entities'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
+import { getAreaTree } from '@/api/system/area'
+import YdTreeSelect from '@/components/yudao-ui/yd-tree-select/yd-tree-select.vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import UserPicker from '@/components/system-select/user-picker.vue'
+import { useUserStore } from '@/store/user'
 import { currRoute, navigateBackPlus } from '@/utils'
 import {
   formatFieldValue,
@@ -170,11 +187,14 @@ const props = defineProps<{
 }>()
 
 const toast = useToast()
+const userStore = useUserStore()
 const getTitle = computed(() => props.id ? `编辑${props.config.title}` : `新增${props.config.title}`)
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<Record<string, any>>(props.config.defaultData()) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
+const areaTree = ref<any[]>([]) // 地区树数据
+const hasAreaField = computed(() => props.config.fields.some(field => field.type === 'area')) // 是否包含地区字段
 const formFields = computed(() => getFormFields(props.config, !!props.id))
 const isProductLineEntity = computed(() => props.config.key === 'business' || props.config.key === 'contract')
 const productPriceProp = computed(() => props.config.key === 'business' ? 'businessPrice' : 'contractPrice')
@@ -198,10 +218,39 @@ const formSchema = createFormSchema(() => {
 const numericFieldProps = computed(() => {
   return new Set(
     props.config.fields
-      .filter(field => field.type === 'dict' || field.type === 'number' || field.type === 'money' || field.type === 'user' || field.source)
+      .filter(field => field.type === 'dict' || field.type === 'number' || field.type === 'money' || field.type === 'user' || field.type === 'area' || field.source)
       .map(field => field.prop),
   )
 })
+
+/** 字段在编辑时是否只读（如负责人改由「转移」处理） */
+function isFieldDisabled(field: CrmFieldConfig) {
+  return !!props.id && !!field.readonlyOnEdit
+}
+
+/** 加载地区树 */
+async function loadAreaTree() {
+  if (!hasAreaField.value) {
+    return
+  }
+  areaTree.value = await getAreaTree()
+}
+
+/** 新增时回填当前登录用户 */
+function applyDefaultCurrentUser() {
+  if (props.id) {
+    return
+  }
+  const userId = userStore.userInfo?.userId
+  if (!userId || userId === -1) {
+    return
+  }
+  props.config.fields.forEach((field) => {
+    if (field.defaultCurrentUser && !formData.value[field.prop]) {
+      formData.value[field.prop] = userId
+    }
+  })
+}
 
 /** 产品清单金额变化 */
 function handleProductTotalsChange(totalProductPrice: number, totalPrice: number) {
@@ -225,10 +274,13 @@ function getPickerParams(field: CrmFieldConfig) {
 }
 
 /** 选择器确认 */
-function handlePickerConfirm(field: CrmFieldConfig) {
+async function handlePickerConfirm(field: CrmFieldConfig, option?: { raw?: Record<string, any> }) {
   field.clearOnChange?.forEach((prop) => {
     formData.value[prop] = undefined
   })
+  if (field.onSelect) {
+    await field.onSelect(formData.value, option?.raw)
+  }
 }
 
 /** 加载详情 */
@@ -322,6 +374,8 @@ function validateProductLines() {
 /** 初始化 */
 onMounted(() => {
   applyQueryDefaults()
+  applyDefaultCurrentUser()
+  loadAreaTree()
   getDetail()
 })
 </script>

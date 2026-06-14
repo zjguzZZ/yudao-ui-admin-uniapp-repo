@@ -1,3 +1,4 @@
+<!-- TODO @AI：和 vue3 + ep，不过度封装！每个模块自己写； -->
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
@@ -63,6 +64,12 @@
       v-if="formData?.id"
       :data="formData"
       :entity-key="config.key"
+    />
+
+    <CrmContactBusiness
+      v-if="config.key === 'contact' && formData?.id"
+      :contact-id="Number(formData.id)"
+      :customer-id="formData.customerId"
     />
 
     <CrmPermissionTeam
@@ -178,6 +185,7 @@ import {
   hasFieldValue,
 } from '@/pages-crm/config/entities'
 import CrmBusinessStatusForm from './crm-business-status-form.vue'
+import CrmContactBusiness from './crm-contact-business.vue'
 import CrmFollowupRecords from './crm-followup-records.vue'
 import CrmOperateLogs from './crm-operate-logs.vue'
 import CrmPermissionTeam from './crm-permission-team.vue'

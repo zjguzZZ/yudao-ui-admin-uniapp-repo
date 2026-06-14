@@ -1,4 +1,6 @@
 <template>
+  <!-- TODO @AI：所有的导出、导入功能，可以去掉！ -->
+  <!-- TODO @AI：客户来源/行业/级别使用 picker、 -->
   <CrmEntityList :config="config" />
 </template>
 

@@ -1,3 +1,4 @@
+// TODO @AI：不采用这种形式，每个模块自己写，更合适。（不过度抽象）
 import type { PageResult } from '@/http/types'
 import {
   createBusiness,
@@ -81,27 +82,28 @@ import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
-export type CrmFieldType =
-  | 'date'
-  | 'datetime'
-  | 'dict'
-  | 'money'
-  | 'number'
-  | 'switch'
-  | 'text'
-  | 'textarea'
-  | 'user'
+export type CrmFieldType
+  = | 'area'
+    | 'date'
+    | 'datetime'
+    | 'dict'
+    | 'money'
+    | 'number'
+    | 'switch'
+    | 'text'
+    | 'textarea'
+    | 'user'
 
-export type CrmPickerSource =
-  | 'business'
-  | 'businessStatus'
-  | 'businessStatusType'
-  | 'contact'
-  | 'contract'
-  | 'customer'
-  | 'product'
-  | 'productCategory'
-  | 'receivablePlan'
+export type CrmPickerSource
+  = | 'business'
+    | 'businessStatus'
+    | 'businessStatusType'
+    | 'contact'
+    | 'contract'
+    | 'customer'
+    | 'product'
+    | 'productCategory'
+    | 'receivablePlan'
 
 export interface CrmFieldConfig {
   prop: string
@@ -117,11 +119,16 @@ export interface CrmFieldConfig {
   detail?: boolean
   list?: boolean
   search?: boolean
+  searchType?: 'dateRange' // 搜索控件类型（默认按字段类型推断）
   readonly?: boolean
+  readonlyOnEdit?: boolean // 编辑时只读（如负责人改由「转移」处理）
+  defaultCurrentUser?: boolean // 新增时默认当前登录用户
   hiddenOnCreate?: boolean
   hiddenOnEdit?: boolean
   params?: Record<string, string>
   clearOnChange?: string[]
+  onSelect?: (form: Record<string, any>, raw?: Record<string, any>) => void | Promise<void> // 选择后回填
+  optionFilter?: (raw: Record<string, any>) => boolean // 选项过滤（如仅展示已审批合同）
 }
 
 export interface CrmSceneTab {
@@ -158,6 +165,7 @@ export interface CrmEntityConfig {
   sceneTabs?: CrmSceneTab[]
 }
 
+// TODO @AI：lodash 是不是就支持了？
 /** 获取对象路径值 */
 export function getValueByPath(data: Record<string, any> | undefined, path: string) {
   if (!data) {
@@ -172,6 +180,7 @@ export function hasFieldValue(data: Record<string, any> | undefined, field: CrmF
   return value !== undefined && value !== null && value !== ''
 }
 
+// TODO @AI：是不是不用这种东东；
 /** 格式化字段值 */
 export function formatFieldValue(data: Record<string, any> | undefined, field: CrmFieldConfig) {
   const value = getValueByPath(data, field.prop)
@@ -251,7 +260,7 @@ const customerLikeFields: CrmFieldConfig[] = [
   { prop: 'name', label: '名称', type: 'text', required: true, list: true, search: true },
   { prop: 'source', label: '客户来源', type: 'dict', dictType: DICT_TYPE.CRM_CUSTOMER_SOURCE, list: true, search: true },
   { prop: 'mobile', label: '手机', type: 'text', validatorType: 'mobile', list: true, search: true },
-  { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+  { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
   { prop: 'ownerUserName', label: '负责人', type: 'text', form: false, list: true },
   { prop: 'telephone', label: '电话', type: 'text' },
   { prop: 'email', label: '邮箱', type: 'text', validatorType: 'email' },
@@ -259,6 +268,8 @@ const customerLikeFields: CrmFieldConfig[] = [
   { prop: 'qq', label: 'QQ', type: 'text' },
   { prop: 'industryId', label: '客户行业', type: 'dict', dictType: DICT_TYPE.CRM_CUSTOMER_INDUSTRY, list: true, search: true },
   { prop: 'level', label: '客户级别', type: 'dict', dictType: DICT_TYPE.CRM_CUSTOMER_LEVEL, list: true, search: true },
+  { prop: 'areaId', label: '地区', type: 'area', detail: false },
+  { prop: 'areaName', label: '地区', type: 'text', form: false },
   { prop: 'detailAddress', label: '详细地址', type: 'text' },
   { prop: 'contactNextTime', label: '下次联系时间', type: 'datetime', list: true },
   { prop: 'contactLastTime', label: '最后跟进时间', type: 'datetime', form: false },
@@ -266,6 +277,34 @@ const customerLikeFields: CrmFieldConfig[] = [
   { prop: 'remark', label: '备注', type: 'textarea', maxlength: 200 },
   { prop: 'createTime', label: '创建时间', type: 'datetime', form: false },
 ]
+
+/** 合同选择商机后回填产品清单 */
+async function fillContractProductsFromBusiness(form: Record<string, any>, raw?: Record<string, any>) {
+  if (!raw?.id) {
+    return
+  }
+  const business = await getBusiness(Number(raw.id))
+  form.businessName = business?.name
+  const products = Array.isArray(business?.products) ? business.products : []
+  // 商机产品的「商机价」即合同的「合同价」
+  form.products = products.map((item: Record<string, any>) => ({ ...item, id: undefined, contractPrice: item.businessPrice }))
+}
+
+/** 回款选择合同后回填「应回款金额」（合同金额 - 已回款金额） */
+function fillReceivablePriceFromContract(form: Record<string, any>, raw?: Record<string, any>) {
+  const remaining = Number(raw?.totalPrice || 0) - Number(raw?.totalReceivablePrice || 0)
+  form.price = Math.round(remaining * 100) / 100
+}
+
+/** 回款选择回款计划后回填金额与回款方式 */
+function fillReceivableFromPlan(form: Record<string, any>, raw?: Record<string, any>) {
+  if (raw?.price !== undefined) {
+    form.price = raw.price
+  }
+  if (raw?.returnType !== undefined) {
+    form.returnType = raw.returnType
+  }
+}
 
 export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
   customer: {
@@ -370,17 +409,19 @@ export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
       { prop: 'name', label: '联系人姓名', type: 'text', required: true, list: true, search: true },
       { prop: 'customerId', label: '客户名称', source: 'customer', required: true, detail: false, search: true },
       { prop: 'customerName', label: '客户名称', type: 'text', form: false, list: true },
-      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
       { prop: 'ownerUserName', label: '负责人', type: 'text', form: false, list: true },
       { prop: 'mobile', label: '手机', type: 'text', validatorType: 'mobile', list: true, search: true },
-      { prop: 'telephone', label: '电话', type: 'text' },
-      { prop: 'email', label: '邮箱', type: 'text', validatorType: 'email' },
-      { prop: 'wechat', label: '微信', type: 'text' },
+      { prop: 'telephone', label: '电话', type: 'text', search: true },
+      { prop: 'email', label: '邮箱', type: 'text', validatorType: 'email', search: true },
+      { prop: 'wechat', label: '微信', type: 'text', search: true },
       { prop: 'qq', label: 'QQ', type: 'text' },
       { prop: 'post', label: '职位', type: 'text' },
       { prop: 'master', label: '关键决策人', type: 'switch' },
       { prop: 'sex', label: '性别', type: 'dict', dictType: DICT_TYPE.SYSTEM_USER_SEX },
       { prop: 'parentId', label: '直属上级', source: 'contact' },
+      { prop: 'areaId', label: '地区', type: 'area', detail: false },
+      { prop: 'areaName', label: '地区', type: 'text', form: false },
       { prop: 'detailAddress', label: '详细地址', type: 'text' },
       { prop: 'contactNextTime', label: '下次联系时间', type: 'datetime' },
       { prop: 'remark', label: '备注', type: 'textarea', maxlength: 200 },
@@ -422,11 +463,11 @@ export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
       { prop: 'name', label: '商机名称', type: 'text', required: true, list: true, search: true },
       { prop: 'customerId', label: '客户名称', source: 'customer', required: true, detail: false, search: true },
       { prop: 'customerName', label: '客户名称', type: 'text', form: false, list: true },
-      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
       { prop: 'ownerUserName', label: '负责人', type: 'text', form: false, list: true },
-      { prop: 'statusTypeId', label: '商机状态组', source: 'businessStatusType', required: true, detail: false, clearOnChange: ['statusId'] },
+      { prop: 'statusTypeId', label: '商机状态组', source: 'businessStatusType', required: true, detail: false, readonlyOnEdit: true, clearOnChange: ['statusId'] },
       { prop: 'statusTypeName', label: '商机状态组', type: 'text', form: false },
-      { prop: 'statusId', label: '商机阶段', source: 'businessStatus', params: { typeId: 'statusTypeId' }, detail: false },
+      { prop: 'statusId', label: '商机阶段', source: 'businessStatus', params: { typeId: 'statusTypeId' }, detail: false, hiddenOnCreate: true },
       { prop: 'statusName', label: '商机阶段', type: 'text', form: false, list: true },
       { prop: 'dealTime', label: '预计成交日期', type: 'date' },
       { prop: 'totalPrice', label: '商机金额', type: 'money', form: false, list: true },
@@ -471,11 +512,11 @@ export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
       { prop: 'name', label: '合同名称', type: 'text', required: true, list: true, search: true },
       { prop: 'customerId', label: '客户名称', source: 'customer', required: true, detail: false, search: true, clearOnChange: ['businessId', 'signContactId'] },
       { prop: 'customerName', label: '客户名称', type: 'text', form: false, list: true },
-      { prop: 'businessId', label: '商机名称', source: 'business', params: { customerId: 'customerId' }, detail: false },
+      { prop: 'businessId', label: '商机名称', source: 'business', params: { customerId: 'customerId' }, detail: false, onSelect: fillContractProductsFromBusiness },
       { prop: 'businessName', label: '商机名称', type: 'text', form: false },
-      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
       { prop: 'ownerUserName', label: '负责人', type: 'text', form: false, list: true },
-      { prop: 'orderDate', label: '下单日期', type: 'date' },
+      { prop: 'orderDate', label: '下单日期', type: 'date', required: true, search: true, searchType: 'dateRange' },
       { prop: 'startTime', label: '开始时间', type: 'date' },
       { prop: 'endTime', label: '结束时间', type: 'date' },
       { prop: 'signUserId', label: '公司签约人', type: 'user', detail: false },
@@ -525,13 +566,13 @@ export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
       { prop: 'no', label: '回款编号', type: 'text', readonly: true, hiddenOnCreate: true, list: true, search: true },
       { prop: 'customerId', label: '客户名称', source: 'customer', required: true, detail: false, search: true, clearOnChange: ['contractId', 'planId'] },
       { prop: 'customerName', label: '客户名称', type: 'text', form: false, list: true },
-      { prop: 'contractId', label: '合同名称', source: 'contract', params: { customerId: 'customerId' }, required: true, detail: false },
+      { prop: 'contractId', label: '合同名称', source: 'contract', params: { customerId: 'customerId' }, required: true, detail: false, clearOnChange: ['planId'], optionFilter: raw => raw.auditStatus === 20, onSelect: fillReceivablePriceFromContract },
       { prop: 'contract.name', label: '合同名称', type: 'text', form: false },
-      { prop: 'planId', label: '回款期数', source: 'receivablePlan', params: { customerId: 'customerId', contractId: 'contractId' }, detail: false },
+      { prop: 'planId', label: '回款期数', source: 'receivablePlan', params: { customerId: 'customerId', contractId: 'contractId' }, detail: false, optionFilter: raw => !raw.receivableId, onSelect: fillReceivableFromPlan },
       { prop: 'returnType', label: '回款方式', type: 'dict', dictType: DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE },
       { prop: 'price', label: '回款金额', type: 'money', required: true, list: true },
       { prop: 'returnTime', label: '回款日期', type: 'date', required: true, list: true },
-      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
       { prop: 'ownerUserName', label: '负责人', type: 'text', form: false },
       { prop: 'auditStatus', label: '审批状态', type: 'dict', dictType: DICT_TYPE.CRM_AUDIT_STATUS, form: false, list: true },
       { prop: 'remark', label: '备注', type: 'textarea', maxlength: 200 },
@@ -575,13 +616,15 @@ export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
       { prop: 'customerName', label: '客户名称', type: 'text', form: false, list: true },
       { prop: 'contractId', label: '合同名称', source: 'contract', params: { customerId: 'customerId' }, required: true, detail: false },
       { prop: 'contractNo', label: '合同编号', type: 'text', form: false, list: true },
-      { prop: 'period', label: '期数', type: 'number', required: true, list: true },
+      { prop: 'period', label: '期数', type: 'number', readonly: true, hiddenOnCreate: true, list: true },
       { prop: 'price', label: '计划回款金额', type: 'money', required: true, list: true },
       { prop: 'returnTime', label: '计划回款日期', type: 'date', required: true, list: true },
       { prop: 'remindDays', label: '提前提醒天数', type: 'number' },
       { prop: 'returnType', label: '回款方式', type: 'dict', dictType: DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE },
-      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
       { prop: 'ownerUserName', label: '负责人', type: 'text', form: false },
+      { prop: 'receivable.price', label: '实际回款金额', type: 'money', form: false },
+      { prop: 'receivable.returnTime', label: '实际回款日期', type: 'date', form: false },
       { prop: 'remark', label: '备注', type: 'textarea', maxlength: 200 },
       { prop: 'createTime', label: '创建时间', type: 'datetime', form: false },
     ],
@@ -620,7 +663,7 @@ export const crmEntityConfigs: Record<string, CrmEntityConfig> = {
     fields: [
       { prop: 'name', label: '产品名称', type: 'text', required: true, list: true, search: true },
       { prop: 'no', label: '产品编码', type: 'text', required: true, list: true, search: true },
-      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false },
+      { prop: 'ownerUserId', label: '负责人', type: 'user', required: true, detail: false, defaultCurrentUser: true, readonlyOnEdit: true },
       { prop: 'categoryId', label: '产品分类', source: 'productCategory', required: true, detail: false },
       { prop: 'categoryName', label: '产品分类', type: 'text', form: false, list: true },
       { prop: 'unit', label: '产品单位', type: 'dict', dictType: DICT_TYPE.CRM_PRODUCT_UNIT, list: true },

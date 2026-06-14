@@ -1,3 +1,4 @@
+<!-- TODO @AI：这种是不是全局封装下组件，来进行使用？？？ -->
 <template>
   <view v-if="useDefaultSlot" @click="handleOpen">
     <slot />
@@ -47,16 +48,16 @@ import { getProductSimpleList } from '@/api/crm/product'
 import { getProductCategoryList } from '@/api/crm/product/category'
 import { getReceivablePlanSimpleList } from '@/api/crm/receivable/plan'
 
-type CrmPickerSource =
-  | 'business'
-  | 'businessStatus'
-  | 'businessStatusType'
-  | 'contact'
-  | 'contract'
-  | 'customer'
-  | 'product'
-  | 'productCategory'
-  | 'receivablePlan'
+type CrmPickerSource
+  = | 'business'
+    | 'businessStatus'
+    | 'businessStatusType'
+    | 'contact'
+    | 'contract'
+    | 'customer'
+    | 'product'
+    | 'productCategory'
+    | 'receivablePlan'
 
 interface PickerOption {
   id: number | string
@@ -74,6 +75,7 @@ const props = withDefaults(defineProps<{
   params?: Record<string, any>
   disabled?: boolean
   useDefaultSlot?: boolean
+  optionFilter?: (raw: Record<string, any>) => boolean
 }>(), {
   labelWidth: '200rpx',
   label: '',
@@ -132,7 +134,11 @@ function handleOpen() {
 async function loadOptions() {
   loading.value = true
   try {
-    options.value = await resolveOptions()
+    const resolved = await resolveOptions()
+    // 选项过滤：无 raw 的特殊项（如「顶级分类」）始终保留
+    options.value = props.optionFilter
+      ? resolved.filter(item => !item.raw || props.optionFilter!(item.raw))
+      : resolved
   } finally {
     loading.value = false
   }

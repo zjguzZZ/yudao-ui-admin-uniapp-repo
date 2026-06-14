@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO @AI：是不是可以 tab 化？基本信息、跟进记录、团队成员、操作日志？ -->
   <CrmEntityDetail :id="props.id" :config="config" />
 </template>
 

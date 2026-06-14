@@ -1,3 +1,4 @@
+<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <view v-if="sections.length > 0" class="mt-24rpx">
     <!-- 关联数据 -->
@@ -11,9 +12,20 @@
     >
       <view class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
         <text class="text-28rpx text-[#333] font-semibold">{{ section.title }}</text>
-        <wd-tag type="primary" variant="plain">
-          {{ section.rows.length }} 条
-        </wd-tag>
+        <view class="flex items-center gap-12rpx">
+          <wd-tag type="primary" variant="plain">
+            {{ section.rows.length }} 条
+          </wd-tag>
+          <wd-button
+            v-if="canCreate(section)"
+            size="small"
+            type="primary"
+            variant="plain"
+            @click="handleCreate(section)"
+          >
+            新增
+          </wd-button>
+        </view>
       </view>
       <view
         v-for="(row, index) in section.rows"
@@ -39,11 +51,12 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { getBusinessPageByContact, getBusinessPageByCustomer } from '@/api/crm/business'
+import { getBusinessPageByCustomer } from '@/api/crm/business'
 import { getContactPageByBusiness, getContactPageByCustomer } from '@/api/crm/contact'
 import { getContractPageByBusiness, getContractPageByCustomer } from '@/api/crm/contract'
 import { getReceivablePageByCustomer } from '@/api/crm/receivable'
 import { getReceivablePlanPageByCustomer } from '@/api/crm/receivable/plan'
+import { useAccess } from '@/hooks/useAccess'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 interface RelatedField {
@@ -52,7 +65,13 @@ interface RelatedField {
   type?: 'date' | 'datetime' | 'money'
 }
 
-interface RelatedSection {
+interface RelatedSectionExtra {
+  createPath?: string // 新增表单路径
+  createQuery?: Record<string, any> // 新增预填参数
+  createPermission?: string // 新增权限
+}
+
+interface RelatedSection extends RelatedSectionExtra {
   fields: RelatedField[]
   key: string
   rows: Record<string, any>[]
@@ -65,6 +84,7 @@ const props = defineProps<{
   entityKey: string
 }>()
 
+const { hasAccessByCodes } = useAccess()
 const loading = ref(false) // 关联数据加载状态
 const sections = ref<RelatedSection[]>([]) // 关联数据分组
 const bizId = computed(() => Number(props.data?.id || 0))
@@ -87,19 +107,12 @@ async function resolveSections(): Promise<RelatedSection[]> {
   switch (props.entityKey) {
     case 'customer':
       return loadCustomerSections()
-    case 'contact':
-      return [
-        createSection('business', '商机', 'name', await getPageRows(getBusinessPageByContact({ pageNo: 1, pageSize: 5, contactId: bizId.value })), [
-          { prop: 'customerName', label: '客户' },
-          { prop: 'totalPrice', label: '金额', type: 'money' },
-          { prop: 'statusName', label: '阶段' },
-        ]),
-      ]
     case 'business':
       return loadBusinessSections()
     case 'contract':
       return loadContractSections()
     default:
+      // 联系人的「关联商机」由 crm-contact-business.vue 单独支持新增/解除
       return []
   }
 }
@@ -118,24 +131,24 @@ async function loadCustomerSections() {
     createSection('contacts', '联系人', 'name', contacts, [
       { prop: 'mobile', label: '手机' },
       { prop: 'ownerUserName', label: '负责人' },
-    ]),
+    ], { createPath: '/pages-crm/contact/form/index', createQuery: { customerId }, createPermission: 'crm:contact:create' }),
     createSection('businesses', '商机', 'name', businesses, [
       { prop: 'totalPrice', label: '金额', type: 'money' },
       { prop: 'statusName', label: '阶段' },
-    ]),
+    ], { createPath: '/pages-crm/business/form/index', createQuery: { customerId }, createPermission: 'crm:business:create' }),
     createSection('contracts', '合同', 'name', contracts, [
       { prop: 'no', label: '编号' },
       { prop: 'totalPrice', label: '金额', type: 'money' },
-    ]),
+    ], { createPath: '/pages-crm/contract/form/index', createQuery: { customerId }, createPermission: 'crm:contract:create' }),
     createSection('plans', '回款计划', 'contractNo', plans, [
       { prop: 'period', label: '期数' },
       { prop: 'price', label: '金额', type: 'money' },
       { prop: 'returnTime', label: '日期', type: 'date' },
-    ]),
+    ], { createPath: '/pages-crm/receivable-plan/form/index', createQuery: { customerId }, createPermission: 'crm:receivable-plan:create' }),
     createSection('receivables', '回款', 'no', receivables, [
       { prop: 'price', label: '金额', type: 'money' },
       { prop: 'returnTime', label: '日期', type: 'date' },
-    ]),
+    ], { createPath: '/pages-crm/receivable/form/index', createQuery: { customerId }, createPermission: 'crm:receivable:create' }),
   ]
 }
 
@@ -151,7 +164,7 @@ async function loadBusinessSections() {
     createSection('contacts', '联系人', 'name', contacts, [
       { prop: 'mobile', label: '手机' },
       { prop: 'post', label: '职位' },
-    ]),
+    ], { createPath: '/pages-crm/contact/form/index', createQuery: { customerId }, createPermission: 'crm:contact:create' }),
     createSection('products', '产品', 'productName', props.data?.products || [], [
       { prop: 'productNo', label: '编码' },
       { prop: 'count', label: '数量' },
@@ -160,7 +173,7 @@ async function loadBusinessSections() {
     createSection('contracts', '合同', 'name', contracts, [
       { prop: 'no', label: '编号' },
       { prop: 'totalPrice', label: '金额', type: 'money' },
-    ]),
+    ], { createPath: '/pages-crm/contract/form/index', createQuery: { customerId, businessId }, createPermission: 'crm:contract:create' }),
   ]
 }
 
@@ -182,11 +195,11 @@ async function loadContractSections() {
       { prop: 'period', label: '期数' },
       { prop: 'price', label: '金额', type: 'money' },
       { prop: 'returnTime', label: '日期', type: 'date' },
-    ]),
+    ], { createPath: '/pages-crm/receivable-plan/form/index', createQuery: { customerId, contractId }, createPermission: 'crm:receivable-plan:create' }),
     createSection('receivables', '回款', 'no', receivables, [
       { prop: 'price', label: '金额', type: 'money' },
       { prop: 'returnTime', label: '日期', type: 'date' },
-    ]),
+    ], { createPath: '/pages-crm/receivable/form/index', createQuery: { customerId, contractId }, createPermission: 'crm:receivable:create' }),
   ]
 }
 
@@ -197,8 +210,29 @@ function createSection(
   titleProp: string,
   rows: Record<string, any>[],
   fields: RelatedField[],
+  extra: RelatedSectionExtra = {},
 ): RelatedSection {
-  return { fields, key, rows, title, titleProp }
+  return { fields, key, rows, title, titleProp, ...extra }
+}
+
+/** 是否可新增关联数据 */
+function canCreate(section: RelatedSection) {
+  if (!section.createPath) {
+    return false
+  }
+  return !section.createPermission || hasAccessByCodes([section.createPermission])
+}
+
+/** 新增关联数据（预填父级信息后跳转对应表单） */
+function handleCreate(section: RelatedSection) {
+  if (!section.createPath) {
+    return
+  }
+  const query = Object.entries(section.createQuery || {})
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+    .join('&')
+  uni.navigateTo({ url: query ? `${section.createPath}?${query}` : section.createPath })
 }
 
 /** 获取分页列表数据 */

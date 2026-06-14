@@ -1,3 +1,4 @@
+<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
@@ -10,6 +11,106 @@
     <!-- 统计概览 -->
     <scroll-view scroll-y class="min-h-0 flex-1">
       <view class="p-24rpx">
+        <!-- 筛选条件 -->
+        <view class="mb-24rpx rounded-12rpx bg-white p-8rpx shadow-sm">
+          <!-- 业绩模式：选择年份 -->
+          <template v-if="mode === 'performance'">
+            <wd-form-item
+              title="选择年份"
+              title-width="160rpx"
+              is-link
+              :value="formatDate(filters.year, 'YYYY')"
+              placeholder="请选择年份"
+              @click="yearVisible = true"
+            />
+            <wd-datetime-picker
+              v-model="filters.year"
+              v-model:visible="yearVisible"
+              title="请选择年份"
+              type="year"
+              @confirm="handleFilterChange"
+            />
+          </template>
+          <!-- 其余模式：起止时间 -->
+          <template v-else>
+            <wd-form-item
+              title="开始日期"
+              title-width="160rpx"
+              is-link
+              :value="formatDate(filters.startTime)"
+              placeholder="请选择开始日期"
+              @click="startVisible = true"
+            />
+            <wd-datetime-picker
+              v-model="filters.startTime"
+              v-model:visible="startVisible"
+              title="请选择开始日期"
+              type="date"
+              @confirm="handleFilterChange"
+            />
+            <wd-form-item
+              title="结束日期"
+              title-width="160rpx"
+              is-link
+              :value="formatDate(filters.endTime)"
+              placeholder="请选择结束日期"
+              @click="endVisible = true"
+            />
+            <wd-datetime-picker
+              v-model="filters.endTime"
+              v-model:visible="endVisible"
+              title="请选择结束日期"
+              type="date"
+              @confirm="handleFilterChange"
+            />
+          </template>
+
+          <!-- 时间间隔（仅客户、漏斗模式支持） -->
+          <template v-if="supportInterval">
+            <wd-form-item
+              title="时间间隔"
+              title-width="160rpx"
+              is-link
+              :value="intervalLabel"
+              placeholder="请选择时间间隔"
+              @click="intervalVisible = true"
+            />
+            <wd-picker
+              v-model:visible="intervalVisible"
+              :model-value="filters.interval"
+              title="请选择时间间隔"
+              :columns="intervalColumns"
+              @confirm="handleIntervalConfirm"
+            />
+          </template>
+
+          <!-- 归属部门（除画像外大多模式支持） -->
+          <yd-tree-select
+            v-if="supportDept"
+            v-model="filters.deptId"
+            label="归属部门"
+            label-width="160rpx"
+            filterable
+            :data="deptTree"
+            :props="{ value: 'id', label: 'name', children: 'children' }"
+            placeholder="请选择归属部门"
+            @change="handleDeptChange"
+          />
+
+          <!-- 员工（客户、漏斗、业绩、画像模式支持） -->
+          <UserPicker
+            v-if="supportUser"
+            ref="userPickerRef"
+            v-model="filters.userId"
+            type="radio"
+            label="员工"
+            label-width="160rpx"
+            placeholder="请选择员工"
+            @confirm="handleFilterChange"
+          />
+        </view>
+
+        <!-- 统计周期与刷新 -->
         <view class="mb-24rpx flex items-center justify-between">
           <view class="text-26rpx text-[#999]">
             {{ periodText }}
@@ -33,7 +134,7 @@
 
           <view v-if="getRows(section).length > 0">
             <view
-              v-for="(row, index) in getRows(section).slice(0, 8)"
+              v-for="(row, index) in getVisibleRows(section)"
               :key="index"
               class="border-t border-[#f5f5f5] py-16rpx"
             >
@@ -58,6 +159,22 @@
                 </view>
               </template>
             </view>
+
+            <!-- 展开更多 / 收起：超过默认展示行数时出现 -->
+            <view
+              v-if="getRows(section).length > DEFAULT_VISIBLE_ROWS"
+              class="border-t border-[#f5f5f5] pt-16rpx text-center text-26rpx text-[--wot-color-theme]"
+              @click="toggleExpand(section)"
+            >
+              {{ expandedSections[section.title] ? '收起' : `展开更多（共 ${getRows(section).length} 条）` }}
+            </view>
+            <!-- 数据量过大时仅展示前 MAX_VISIBLE_ROWS 条 -->
+            <view
+              v-if="getRows(section).length > MAX_VISIBLE_ROWS"
+              class="pt-8rpx text-center text-24rpx text-[#bbb]"
+            >
+              仅展示前 {{ MAX_VISIBLE_ROWS }} 条
+            </view>
           </view>
           <wd-empty v-else icon="content" tip="暂无统计数据" />
         </view>
@@ -67,9 +184,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import type { Dept } from '@/api/system/dept'
+import { computed, onMounted, reactive, ref } from 'vue'
 import {
   getContractSummary,
+  getCustomerDealCycleByArea,
+  getCustomerDealCycleByProduct,
   getCustomerDealCycleByUser,
   getCustomerSummaryByDate,
   getCustomerSummaryByUser,
@@ -79,6 +199,7 @@ import {
 } from '@/api/crm/statistics/customer'
 import {
   getBusinessInversionRateSummaryByDate,
+  getBusinessPageByDate,
   getBusinessSummaryByDate,
   getBusinessSummaryByEndStatus,
   getFunnelSummary,
@@ -104,10 +225,13 @@ import {
   getProductSalesRank,
   getReceivablePriceRank,
 } from '@/api/crm/statistics/rank'
-import { getDictLabel } from '@/hooks/useDict'
+import { getSimpleDeptList } from '@/api/system/dept'
+import UserPicker from '@/components/system-select/user-picker.vue'
+import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDate } from '@/utils/date'
+import { formatDate, formatDateRange } from '@/utils/date'
+import { handleTree } from '@/utils/tree'
 
 type StatisticsMode = 'customer' | 'funnel' | 'performance' | 'portrait' | 'rank'
 
@@ -128,8 +252,40 @@ const props = defineProps<{
   mode: StatisticsMode
 }>()
 
+const DEFAULT_VISIBLE_ROWS = 10 // 默认展示行数（折叠态）
+const MAX_VISIBLE_ROWS = 50 // 展开后的最大展示行数，避免渲染超大列表
+
 const loading = ref(false) // 统计加载状态
 const sectionData = ref<Record<string, any[]>>({}) // 统计数据
+const expandedSections = reactive<Record<string, boolean>>({}) // 各分组的展开状态
+const deptTree = ref<Dept[]>([]) // 部门树形结构
+const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 员工选择器引用
+
+const startVisible = ref(false) // 开始日期选择器显隐
+const endVisible = ref(false) // 结束日期选择器显隐
+const yearVisible = ref(false) // 年份选择器显隐
+const intervalVisible = ref(false) // 时间间隔选择器显隐
+
+const now = new Date()
+// 筛选条件：时间用时间戳便于 picker 绑定，最终通过 formatDateRange 转换成接口需要的 times
+const filters = reactive({
+  // 性能模式默认本年；其余模式默认最近 30 天
+  startTime: now.getTime() - 3600 * 1000 * 24 * 30, // 开始日期（时间戳）
+  endTime: now.getTime(), // 结束日期（时间戳）
+  year: new Date(now.getFullYear(), 0, 1).getTime(), // 业绩模式选择的年份（时间戳）
+  interval: 2, // 时间间隔，2 = 周（DATE_INTERVAL 字典）
+  deptId: undefined as number | undefined, // 归属部门
+  userId: undefined as number | undefined, // 员工
+})
+
+const intervalColumns = computed(() => // 时间间隔选项
+  getIntDictOptions(DICT_TYPE.DATE_INTERVAL).map(dict => ({ value: dict.value, label: dict.label })),
+)
+const intervalLabel = computed(() => getDictLabel(DICT_TYPE.DATE_INTERVAL, filters.interval)) // 时间间隔展示文案
+const supportInterval = computed(() => props.mode === 'customer' || props.mode === 'funnel') // 是否支持时间间隔
+const supportDept = computed(() => props.mode !== 'portrait') // 是否支持归属部门（画像不支持）
+const supportUser = computed(() => props.mode !== 'rank') // 是否支持员工（排行榜不支持）
+
 const queryParams = computed(() => createQueryParams(props.mode))
 const pageTitle = computed(() => {
   const titleMap: Record<StatisticsMode, string> = {
@@ -143,7 +299,7 @@ const pageTitle = computed(() => {
 })
 const periodText = computed(() => {
   const times = queryParams.value.times || []
-  return times.length === 2 ? `${times[0]} 至 ${times[1]}` : '默认统计周期'
+  return times.length === 2 ? `${formatDate(times[0])} 至 ${formatDate(times[1])}` : '默认统计周期'
 })
 const sections = computed<StatisticsSection[]>(() => sectionMap[props.mode])
 
@@ -217,6 +373,24 @@ const sectionMap: Record<StatisticsMode, StatisticsSection[]> = {
       ],
       load: getCustomerDealCycleByUser,
     },
+    {
+      title: '成交周期（按地区）',
+      columns: [
+        { prop: 'areaName', label: '地区' },
+        { prop: 'customerDealCycle', label: '成交周期' },
+        { prop: 'customerDealCount', label: '成交客户' },
+      ],
+      load: getCustomerDealCycleByArea,
+    },
+    {
+      title: '成交周期（按产品）',
+      columns: [
+        { prop: 'productName', label: '产品' },
+        { prop: 'customerDealCycle', label: '成交周期' },
+        { prop: 'customerDealCount', label: '成交客户' },
+      ],
+      load: getCustomerDealCycleByProduct,
+    },
   ],
   funnel: [
     {
@@ -228,7 +402,15 @@ const sectionMap: Record<StatisticsMode, StatisticsSection[]> = {
       ],
       load: getFunnelSummary,
     },
-    { title: '商机结束状态', load: getBusinessSummaryByEndStatus },
+    {
+      title: '商机结束状态',
+      columns: [
+        { prop: 'endStatus', label: '阶段', dictType: DICT_TYPE.CRM_BUSINESS_END_STATUS_TYPE },
+        { prop: 'businessCount', label: '商机数' },
+        { prop: 'totalPrice', label: '商机金额', type: 'money' },
+      ],
+      load: getBusinessSummaryByEndStatus,
+    },
     {
       title: '新增商机',
       columns: [
@@ -246,6 +428,16 @@ const sectionMap: Record<StatisticsMode, StatisticsSection[]> = {
         { prop: 'businessWinCount', label: '赢单数' },
       ],
       load: getBusinessInversionRateSummaryByDate,
+    },
+    {
+      title: '商机列表',
+      columns: [
+        { prop: 'name', label: '商机名称' },
+        { prop: 'customerName', label: '客户' },
+        { prop: 'totalPrice', label: '商机金额', type: 'money' },
+        { prop: 'statusName', label: '阶段' },
+      ],
+      load: loadBusinessPage,
     },
   ],
   performance: [
@@ -292,6 +484,12 @@ function handleBack() {
   navigateBackPlus()
 }
 
+/** 加载商机列表（分页接口，仅取列表数据展示） */
+async function loadBusinessPage(params: Record<string, any>) {
+  const data = await getBusinessPageByDate({ pageNo: 1, pageSize: 20, ...params })
+  return data?.list || []
+}
+
 /** 加载统计数据 */
 async function loadData() {
   loading.value = true
@@ -300,7 +498,12 @@ async function loadData() {
     await Promise.all(
       sections.value.map(async (section) => {
         try {
-          nextData[section.title] = normalizeRows(await section.load(queryParams.value))
+          let rows = normalizeRows(await section.load(queryParams.value))
+          // 业绩模式：根据当期/上期/去年同期补充环比、同比增长率
+          if (props.mode === 'performance') {
+            rows = rows.map(row => withPerformanceGrowthRate(row))
+          }
+          nextData[section.title] = rows
         } catch {
           nextData[section.title] = []
         }
@@ -312,9 +515,40 @@ async function loadData() {
   }
 }
 
+/** 筛选条件变更后重新查询 */
+function handleFilterChange() {
+  loadData()
+}
+
+/** 时间间隔确认：wd-picker 返回数组，取首项 */
+function handleIntervalConfirm({ value }: { value: (number | string)[] }) {
+  filters.interval = Number(value[0])
+  loadData()
+}
+
+/** 部门变更：切换部门时清空已选员工后再查询 */
+function handleDeptChange() {
+  filters.userId = undefined
+  loadData()
+}
+
+/** 切换分组展开状态 */
+function toggleExpand(section: StatisticsSection) {
+  expandedSections[section.title] = !expandedSections[section.title]
+}
+
 /** 获取分组数据 */
 function getRows(section: StatisticsSection) {
   return sectionData.value[section.title] || []
+}
+
+/** 获取分组可见数据：折叠时取默认行数，展开时最多取 MAX_VISIBLE_ROWS 条 */
+function getVisibleRows(section: StatisticsSection) {
+  const rows = getRows(section)
+  if (expandedSections[section.title]) {
+    return rows.slice(0, MAX_VISIBLE_ROWS)
+  }
+  return rows.slice(0, DEFAULT_VISIBLE_ROWS)
 }
 
 /** 格式化字段值 */
@@ -355,32 +589,55 @@ function normalizeRows(data: any) {
 }
 
 /** 创建查询参数 */
-function createQueryParams(mode: StatisticsMode) {
-  const now = new Date()
+function createQueryParams(mode: StatisticsMode): Record<string, any> {
+  // 业绩模式按年份统计：起止时间为所选年份的 1 月 1 日 ~ 12 月 31 日
   if (mode === 'performance') {
+    const year = filters.year ? new Date(filters.year).getFullYear() : now.getFullYear()
     return {
+      deptId: filters.deptId,
+      userId: filters.userId,
       times: [
-        formatDate(new Date(now.getFullYear(), 0, 1)),
-        formatDate(new Date(now.getFullYear(), 11, 31)),
+        formatDate(new Date(year, 0, 1), 'YYYY-MM-DD HH:mm:ss'),
+        formatDate(new Date(year, 11, 31, 23, 59, 59), 'YYYY-MM-DD HH:mm:ss'),
       ],
     }
   }
+  // 其余模式按起止日期统计，formatDateRange 会补齐当天 00:00:00 ~ 23:59:59
+  const times = formatDateRange([filters.startTime, filters.endTime])
+  const params: Record<string, any> = { times }
+  if (supportInterval.value) {
+    params.interval = filters.interval
+  }
+  if (supportDept.value) {
+    params.deptId = filters.deptId
+  }
+  if (supportUser.value) {
+    params.userId = filters.userId
+  }
+  return params
+}
+
+/** 计算业绩增长率：环比 =(当期-上期)/上期，同比 =(当期-去年同期)/去年同期；除数为 0 时返回 null（展示为 -） */
+function withPerformanceGrowthRate(row: Record<string, any>) {
+  const current = Number(row.currentMonthCount) || 0
+  const lastMonth = Number(row.lastMonthCount) || 0
+  const lastYear = Number(row.lastYearCount) || 0
   return {
-    interval: 2,
-    times: [
-      formatDate(new Date(now.getTime() - 3600 * 1000 * 24 * 7)),
-      formatDate(new Date(now.getTime() - 3600 * 1000 * 24)),
-    ],
+    ...row,
+    momGrowthRate: lastMonth !== 0 ? (((current - lastMonth) / lastMonth) * 100).toFixed(2) : null,
+    yoyGrowthRate: lastYear !== 0 ? (((current - lastYear) / lastYear) * 100).toFixed(2) : null,
   }
 }
 
-/** 业绩列 */
+/** 业绩列：包含当期/上期/去年同期，以及环比、同比增长率 */
 function performanceColumns(label: string): StatisticsColumn[] {
   return [
     { prop: 'time', label: '时间' },
     { prop: 'currentMonthCount', label: `当期${label}` },
     { prop: 'lastMonthCount', label: `上期${label}` },
     { prop: 'lastYearCount', label: `去年同期${label}` },
+    { prop: 'momGrowthRate', label: '环比增长率', type: 'percent' },
+    { prop: 'yoyGrowthRate', label: '同比增长率', type: 'percent' },
   ]
 }
 
@@ -395,7 +652,11 @@ function portraitColumns(prop: string, label: string, dictType?: string): Statis
 }
 
 /** 初始化 */
-onMounted(() => {
+onMounted(async () => {
+  // 加载部门树（画像模式无部门筛选，无需加载）
+  if (supportDept.value) {
+    deptTree.value = handleTree(await getSimpleDeptList())
+  }
   loadData()
 })
 </script>

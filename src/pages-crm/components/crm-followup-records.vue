@@ -1,3 +1,4 @@
+<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <view class="mt-24rpx">
     <!-- 跟进记录 -->
@@ -144,7 +145,7 @@
                       @click="handlePreviewImage(formData.picUrls!, url)"
                     />
                     <view
-                      class="absolute right-0 top-0 flex h-36rpx w-36rpx items-center justify-center rounded-full bg-[rgba(0,0,0,0.55)] text-24rpx text-white"
+                      class="absolute right-0 top-0 h-36rpx w-36rpx flex items-center justify-center rounded-full bg-[rgba(0,0,0,0.55)] text-24rpx text-white"
                       @click.stop="handleRemoveImage(index)"
                     >
                       ×
@@ -281,7 +282,9 @@ const contactOptions = ref<Contact[]>([]) // 关联联系人选项
 const businessOptions = ref<Business[]>([]) // 关联商机选项
 const formData = ref<FollowUpRecord>(createDefaultData()) // 表单数据
 const formSchema = createFormSchema({
+  type: [{ required: true, message: '跟进类型不能为空' }],
   content: [{ required: true, message: '跟进内容不能为空' }],
+  nextTime: [{ required: true, message: '下次联系时间不能为空' }],
 })
 const canSelectRelated = computed(() => props.bizType === BizTypeEnum.CRM_CUSTOMER)
 const contactSelectedLabel = computed(() => formatSelectedLabel(formData.value.contactIds || [], contactOptions.value))

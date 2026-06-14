@@ -18,6 +18,14 @@
               placeholder="请输入状态组名"
             />
           </wd-form-item>
+          <YdTreeSelect
+            v-model="formData.deptIds"
+            :data="deptTree"
+            multiple
+            label="应用部门"
+            label-width="200rpx"
+            placeholder="请选择（默认全公司）"
+          />
         </wd-cell-group>
       </wd-form>
 
@@ -60,7 +68,9 @@
           />
         </view>
         <view class="border-t border-[#f5f5f5] px-24rpx py-20rpx">
-          <view class="mb-12rpx text-28rpx text-[#666]">结束阶段</view>
+          <view class="mb-12rpx text-28rpx text-[#666]">
+            结束阶段
+          </view>
           <view class="flex flex-wrap gap-12rpx">
             <wd-tag
               v-for="status in DEFAULT_STATUSES"
@@ -100,7 +110,10 @@ import {
   getBusinessStatus,
   updateBusinessStatus,
 } from '@/api/crm/business/status'
+import { getSimpleDeptList } from '@/api/system/dept'
+import YdTreeSelect from '@/components/yudao-ui/yd-tree-select/yd-tree-select.vue'
 import { navigateBackPlus } from '@/utils'
+import { handleTree } from '@/utils/tree'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
@@ -123,9 +136,15 @@ const formData = ref<BusinessStatusType>({
   deptIds: [],
   statuses: [{ name: '', percent: undefined }],
 }) // 表单数据
+const deptTree = ref<any[]>([]) // 部门树数据
 const formSchema = createFormSchema({
   name: [{ required: true, message: '状态组名不能为空' }],
 })
+
+/** 加载部门树 */
+async function loadDeptTree() {
+  deptTree.value = handleTree(await getSimpleDeptList())
+}
 
 /** 返回上一页 */
 function handleBack() {
@@ -205,6 +224,7 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
+  loadDeptTree()
   getDetail()
 })
 </script>

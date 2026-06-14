@@ -1,3 +1,4 @@
+<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <view class="mt-24rpx bg-white">
     <!-- 产品清单 -->
@@ -28,6 +29,7 @@
         @confirm="option => handleProductConfirm(row, option)"
       />
       <wd-cell title="产品编码" title-width="220rpx" :value="row.productNo || '-'" />
+      <wd-cell title="产品单位" title-width="220rpx" :value="getDictLabel(DICT_TYPE.CRM_PRODUCT_UNIT, row.productUnit) || '-'" />
       <wd-cell title="产品单价" title-width="220rpx" :value="formatMoney(row.productPrice)" />
       <wd-form-item :title="priceLabel" title-width="220rpx">
         <wd-input
@@ -63,6 +65,8 @@
 
 <script lang="ts" setup>
 import { computed, watch } from 'vue'
+import { getDictLabel } from '@/hooks/useDict'
+import { DICT_TYPE } from '@/utils/constants'
 import CrmPicker from './crm-picker.vue'
 
 interface ProductLine {
@@ -96,12 +100,17 @@ const emit = defineEmits<{
 const products = defineModel<ProductLine[]>({ default: () => [] })
 const priceLabel = computed(() => props.priceProp === 'businessPrice' ? '售价' : '合同价')
 const totalProductPrice = computed(() => {
-  return products.value.reduce((total, row) => total + Number(row.totalPrice || 0), 0)
+  return round2(products.value.reduce((total, row) => total + Number(row.totalPrice || 0), 0))
 })
 const totalPrice = computed(() => {
   const discountPercent = Number(props.discountPercent || 0)
-  return totalProductPrice.value - totalProductPrice.value * discountPercent / 100
+  return round2(totalProductPrice.value - totalProductPrice.value * discountPercent / 100)
 })
+
+/** 金额保留两位小数，避免浮点误差 */
+function round2(value: number) {
+  return Math.round((Number(value) || 0) * 100) / 100
+}
 
 watch(
   products,
@@ -109,7 +118,7 @@ watch(
     rows.forEach((row) => {
       const price = Number(row[props.priceProp] || 0)
       const count = Number(row.count || 0)
-      row.totalPrice = price && count ? price * count : undefined
+      row.totalPrice = price && count ? round2(price * count) : undefined
     })
     emit('totals-change', totalProductPrice.value, totalPrice.value)
   },

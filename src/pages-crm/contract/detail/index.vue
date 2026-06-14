@@ -152,13 +152,12 @@ definePage({
 })
 
 const bizType = BizTypeEnum.CRM_CONTRACT
-// TODO @AI：这种顺序，应该和 vue3 + ep 一致，除了【基础信息】在前面以外；别的模块一起看下；
 const tabs: { key: string, title: string }[] = [ // tab 配置
   { key: 'basic', title: '基本信息' },
   { key: 'followup', title: '跟进记录' },
-  { key: 'team', title: '团队成员' },
   { key: 'plans', title: '回款计划' },
   { key: 'receivables', title: '回款' },
+  { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
 ]
 

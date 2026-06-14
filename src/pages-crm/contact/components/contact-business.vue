@@ -1,4 +1,3 @@
-<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <view class="mt-24rpx bg-white">
     <!-- 关联商机标题栏 -->

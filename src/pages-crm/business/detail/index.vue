@@ -8,7 +8,6 @@
     />
 
     <!-- 详情分类 -->
-    <!-- TODO @AI：tabs 都是 。。。customer detail 是不会的。 -->
     <view class="bg-white">
       <wd-tabs v-model="tabIndex">
         <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
@@ -147,15 +146,14 @@ definePage({
 })
 
 const bizType = BizTypeEnum.CRM_BUSINESS
-// TODO @AI：这种顺序，应该和 vue3 + ep 一致，除了【基础信息】在前面以外；别的模块一起看下；
-const tabs: { key: string, title: string }[] = [ // tab 配置
+const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
   { key: 'followup', title: '跟进记录' },
   { key: 'contacts', title: '联系人' },
-  { key: 'team', title: '团队成员' },
   { key: 'contracts', title: '合同' },
+  { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
-]
+] // tab 配置
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()

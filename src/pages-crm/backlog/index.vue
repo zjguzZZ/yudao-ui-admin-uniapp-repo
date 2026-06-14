@@ -14,13 +14,20 @@
       </wd-tabs>
     </view>
 
-    <!-- 当前待办列表（各自模块组件） -->
-    <component :is="tabs[tabIndex].component" class="min-h-0 flex-1" />
+    <!-- 当前待办列表 -->
+    <CustomerTodayContactList v-if="currentTabKey === 'customerTodayContact'" class="min-h-0 flex-1" />
+    <ClueFollowList v-else-if="currentTabKey === 'clueFollow'" class="min-h-0 flex-1" />
+    <CustomerFollowList v-else-if="currentTabKey === 'customerFollow'" class="min-h-0 flex-1" />
+    <CustomerPutPoolRemindList v-else-if="currentTabKey === 'customerPutPoolRemind'" class="min-h-0 flex-1" />
+    <ContractAuditList v-else-if="currentTabKey === 'contractAudit'" class="min-h-0 flex-1" />
+    <ReceivableAuditList v-else-if="currentTabKey === 'receivableAudit'" class="min-h-0 flex-1" />
+    <ReceivablePlanRemindList v-else-if="currentTabKey === 'receivablePlanRemind'" class="min-h-0 flex-1" />
+    <ContractRemindList v-else-if="currentTabKey === 'contractRemind'" class="min-h-0 flex-1" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getFollowClueCount } from '@/api/crm/clue'
 import { getAuditContractCount, getRemindContractCount } from '@/api/crm/contract'
 import { getFollowCustomerCount, getPutPoolRemindCustomerCount, getTodayContactCustomerCount } from '@/api/crm/customer'
@@ -43,19 +50,20 @@ definePage({
   },
 })
 
-const tabs = [
-  { key: 'customerTodayContact', title: '今日需联系客户', component: CustomerTodayContactList, getCount: getTodayContactCustomerCount },
-  { key: 'clueFollow', title: '分配给我的线索', component: ClueFollowList, getCount: getFollowClueCount },
-  { key: 'customerFollow', title: '分配给我的客户', component: CustomerFollowList, getCount: getFollowCustomerCount },
-  { key: 'customerPutPoolRemind', title: '待进入公海的客户', component: CustomerPutPoolRemindList, getCount: getPutPoolRemindCustomerCount },
-  { key: 'contractAudit', title: '待审核合同', component: ContractAuditList, getCount: getAuditContractCount },
-  { key: 'receivableAudit', title: '待审核回款', component: ReceivableAuditList, getCount: getAuditReceivableCount },
-  { key: 'receivablePlanRemind', title: '待回款提醒', component: ReceivablePlanRemindList, getCount: getReceivablePlanRemindCount },
-  { key: 'contractRemind', title: '即将到期的合同', component: ContractRemindList, getCount: getRemindContractCount },
-] // 待办分类
+const tabs = [ // 待办分类
+  { key: 'customerTodayContact', title: '今日需联系客户', getCount: getTodayContactCustomerCount },
+  { key: 'clueFollow', title: '分配给我的线索', getCount: getFollowClueCount },
+  { key: 'customerFollow', title: '分配给我的客户', getCount: getFollowCustomerCount },
+  { key: 'customerPutPoolRemind', title: '待进入公海的客户', getCount: getPutPoolRemindCustomerCount },
+  { key: 'contractAudit', title: '待审核合同', getCount: getAuditContractCount },
+  { key: 'receivableAudit', title: '待审核回款', getCount: getAuditReceivableCount },
+  { key: 'receivablePlanRemind', title: '待回款提醒', getCount: getReceivablePlanRemindCount },
+  { key: 'contractRemind', title: '即将到期的合同', getCount: getRemindContractCount },
+]
 
 const tabIndex = ref(0) // 当前待办分类
 const counts = ref<Record<string, number>>({}) // 待办数量
+const currentTabKey = computed(() => tabs[tabIndex.value]?.key) // 当前待办分类标识
 
 /** 返回上一页 */
 function handleBack() {

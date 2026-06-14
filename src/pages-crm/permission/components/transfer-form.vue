@@ -1,4 +1,3 @@
-<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <wd-popup
     v-model="visible"

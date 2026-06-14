@@ -1,4 +1,3 @@
-<!-- TODO @AI：应该拿到所属模块的 components 里 -->
 <template>
   <view :class="embedded ? '' : 'mt-24rpx'">
     <!-- 团队成员（嵌入模式由外层底部操作触发新增/退出） -->

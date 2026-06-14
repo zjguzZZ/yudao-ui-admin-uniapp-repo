@@ -1,4 +1,4 @@
-<!-- TODO @AI：写下组件的作用！ -->
+<!-- CRM 通用单选选择器：按 source 加载对应业务数据（客户/联系人/商机/合同/产品/产品分类/商机阶段/回款计划）的下拉选项，支持表单项 / 单元格 / 自定义插槽三种展示形态 -->
 <template>
   <view v-if="useDefaultSlot" @click="handleOpen">
     <slot />

@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container" :class="{ 'yd-page-container-paging': isPagingTab }">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="商机详情"
@@ -9,7 +9,7 @@
 
     <!-- 详情分类 -->
     <view class="bg-white">
-      <wd-tabs v-model="tabIndex">
+      <wd-tabs v-model="tabIndex" slidable="always">
         <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
       </wd-tabs>
     </view>
@@ -63,13 +63,13 @@
     <CrmFollowupRecords v-else-if="activeTab === 'followup' && businessId" ref="followupRef" embedded :biz-id="businessId" :biz-type="bizType" />
 
     <!-- 联系人 -->
-    <ContactList v-else-if="activeTab === 'contacts' && businessId" ref="listRef" :business-id="businessId" :customer-id="formData.customerId" />
+    <ContactList v-else-if="activeTab === 'contacts' && businessId" ref="listRef" class="min-h-0 flex-1" :business-id="businessId" :customer-id="formData.customerId" />
 
     <!-- 团队成员 -->
     <CrmPermissionTeam v-else-if="activeTab === 'team' && businessId" ref="teamRef" embedded :biz-id="businessId" :biz-type="bizType" @quit-team="handleQuitTeam" @can-quit-change="(v: boolean) => teamCanQuit = v" />
 
     <!-- 合同 -->
-    <ContractList v-else-if="activeTab === 'contracts' && businessId" ref="listRef" :business-id="businessId" />
+    <ContractList v-else-if="activeTab === 'contracts' && businessId" ref="listRef" class="min-h-0 flex-1" :business-id="businessId" />
 
     <!-- 操作日志 -->
     <CrmOperateLogs v-else-if="activeTab === 'log' && businessId" :biz-id="businessId" :biz-type="bizType" />
@@ -169,6 +169,7 @@ const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表
 const businessStatusFormRef = ref<InstanceType<typeof CrmBusinessStatusForm>>() // 变更商机状态引用
 const businessId = computed(() => Number(props.id))
 const activeTab = computed(() => tabs[tabIndex.value].key)
+const isPagingTab = computed(() => ['contacts', 'contracts'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:business:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:business:delete']))
 const moreActions = computed(() => {

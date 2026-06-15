@@ -1,26 +1,37 @@
 <template>
   <!-- 联系人列表（按客户/商机加载，卡片样式对齐联系人列表页） -->
-  <view class="p-24rpx pb-160rpx">
-    <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm" @click="handleDetail(item)">
-      <view class="mb-16rpx flex items-start justify-between gap-16rpx">
-        <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
-          {{ item.name || '-' }}
+  <view class="min-h-0 flex flex-1 flex-col">
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="10"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      empty-view-text="暂无联系人"
+      @query="queryList"
+    >
+      <view class="p-24rpx pb-160rpx">
+        <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm" @click="handleDetail(item)">
+          <view class="mb-16rpx flex items-start justify-between gap-16rpx">
+            <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
+              {{ item.name || '-' }}
+            </view>
+            <wd-tag v-if="item.master" type="primary" variant="plain">
+              关键决策人
+            </wd-tag>
+          </view>
+          <view v-if="item.mobile" class="mb-12rpx text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">手机：</text>{{ item.mobile }}
+          </view>
+          <view v-if="item.ownerUserName" class="text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">负责人：</text>{{ item.ownerUserName }}
+          </view>
         </view>
-        <wd-tag v-if="item.master" type="primary" variant="plain">
-          关键决策人
-        </wd-tag>
       </view>
-      <view v-if="item.mobile" class="mb-12rpx text-28rpx text-[#666]">
-        <text class="mr-8rpx text-[#999]">手机：</text>{{ item.mobile }}
-      </view>
-      <view v-if="item.ownerUserName" class="text-28rpx text-[#666]">
-        <text class="mr-8rpx text-[#999]">负责人：</text>{{ item.ownerUserName }}
-      </view>
-    </view>
-    <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无联系人" />
-    <view v-if="loading" class="py-48rpx text-center text-28rpx text-[#999]">
-      加载中...
-    </view>
+    </z-paging>
   </view>
 </template>
 
@@ -29,35 +40,37 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getContactPageByBusiness, getContactPageByCustomer } from '@/api/crm/contact'
 
 const props = defineProps<{ customerId?: number, businessId?: number }>()
-const loading = ref(false) // 列表加载状态
 const list = ref<Record<string, any>[]>([]) // 联系人列表
+const pagingRef = ref<any>() // 分页组件引用
 
-/** 加载联系人 */
-async function getList() {
+/** 查询列表 */
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.customerId && !props.businessId) {
+    pagingRef.value?.complete([])
     return
   }
-  loading.value = true
   try {
-    // TODO @AI：是不是要翻页？？？
     const data = props.businessId
       ? await getContactPageByBusiness({
-          pageNo: 1,
-          pageSize: 20,
+          pageNo,
+          pageSize,
           businessId: props.businessId,
           customerId: props.customerId,
         })
       : await getContactPageByCustomer({
-          pageNo: 1,
-          pageSize: 20,
+          pageNo,
+          pageSize,
           customerId: props.customerId!,
         })
-    list.value = data.list
+    pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
-    list.value = []
-  } finally {
-    loading.value = false
+    pagingRef.value?.complete(false)
   }
+}
+
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 查看详情 */
@@ -71,18 +84,17 @@ function openAdd() {
   uni.navigateTo({ url: `/pages-crm/contact/form/index${query}` })
 }
 
-watch(() => [props.customerId, props.businessId], () => getList())
+watch(() => [props.customerId, props.businessId], () => reload())
 
-defineExpose({ getList, openAdd })
+defineExpose({ reload, getList: reload, openAdd })
 
 /** 初始化 */
 onMounted(() => {
-  getList()
-  uni.$on('crm:contact:reload', getList)
+  uni.$on('crm:contact:reload', reload)
 })
 
 /** 卸载 */
 onUnmounted(() => {
-  uni.$off('crm:contact:reload', getList)
+  uni.$off('crm:contact:reload', reload)
 })
 </script>

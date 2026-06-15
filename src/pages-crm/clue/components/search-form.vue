@@ -63,11 +63,11 @@ import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 
-const dictFilters = [ // 字典筛选项（来源/行业/级别用 picker，选项较多）
+const dictFilters = [
   { prop: 'source', label: '客户来源', dictType: DICT_TYPE.CRM_CUSTOMER_SOURCE },
   { prop: 'industryId', label: '客户行业', dictType: DICT_TYPE.CRM_CUSTOMER_INDUSTRY },
   { prop: 'level', label: '客户级别', dictType: DICT_TYPE.CRM_CUSTOMER_LEVEL },
-]
+] // 字典筛选项（来源/行业/级别用 picker，选项较多）
 
 const visible = ref(false) // 搜索弹窗显示状态
 const pickerVisible = reactive<Record<string, boolean>>({}) // 字典选择器显示状态

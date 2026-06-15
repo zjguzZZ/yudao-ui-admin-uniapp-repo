@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container" :class="{ 'yd-page-container-paging': isPagingTab }">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="客户详情"
@@ -9,7 +9,7 @@
 
     <!-- 详情分类 -->
     <view class="bg-white">
-      <wd-tabs v-model="tabIndex">
+      <wd-tabs v-model="tabIndex" slidable="always">
         <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
       </wd-tabs>
     </view>
@@ -56,11 +56,11 @@
     <CrmOperateLogs v-else-if="activeTab === 'log' && customerId" :biz-id="customerId" :biz-type="bizType" />
 
     <!-- 关联数据：各模块自己的列表组件 -->
-    <ContactList v-else-if="activeTab === 'contacts' && customerId" ref="listRef" :customer-id="customerId" />
-    <BusinessList v-else-if="activeTab === 'businesses' && customerId" ref="listRef" :customer-id="customerId" />
-    <ContractList v-else-if="activeTab === 'contracts' && customerId" ref="listRef" :customer-id="customerId" />
-    <ReceivablePlanList v-else-if="activeTab === 'plans' && customerId" ref="listRef" :customer-id="customerId" />
-    <ReceivableList v-else-if="activeTab === 'receivables' && customerId" ref="listRef" :customer-id="customerId" />
+    <ContactList v-else-if="activeTab === 'contacts' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
+    <BusinessList v-else-if="activeTab === 'businesses' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
+    <ContractList v-else-if="activeTab === 'contracts' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
+    <ReceivablePlanList v-else-if="activeTab === 'plans' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
+    <ReceivableList v-else-if="activeTab === 'receivables' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
 
     <!-- 底部操作（按 tab 区分，只放当前模块的操作） -->
     <view v-if="hasFooter" class="yd-detail-footer">
@@ -188,6 +188,7 @@ const distributeFormSchema = createFormSchema({ ownerUserId: [{ required: true, 
 const customerId = computed(() => Number(props.id))
 const activeTabConfig = computed(() => tabs[tabIndex.value])
 const activeTab = computed(() => activeTabConfig.value.key)
+const isPagingTab = computed(() => ['contacts', 'businesses', 'contracts', 'plans', 'receivables'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:customer:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:customer:delete']))
 const canRelatedAdd = computed(() => {

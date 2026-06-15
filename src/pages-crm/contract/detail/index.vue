@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container" :class="{ 'yd-page-container-paging': isPagingTab }">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="合同详情"
@@ -9,7 +9,7 @@
 
     <!-- 详情分类 -->
     <view class="bg-white">
-      <wd-tabs v-model="tabIndex">
+      <wd-tabs v-model="tabIndex" slidable="always">
         <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
       </wd-tabs>
     </view>
@@ -75,10 +75,10 @@
     <CrmPermissionTeam v-else-if="activeTab === 'team' && contractId" ref="teamRef" embedded :biz-id="contractId" :biz-type="bizType" @quit-team="handleQuitTeam" @can-quit-change="(v: boolean) => teamCanQuit = v" />
 
     <!-- 回款计划 -->
-    <ReceivablePlanList v-else-if="activeTab === 'plans' && contractId" ref="listRef" :customer-id="formData.customerId" :contract-id="contractId" />
+    <ReceivablePlanList v-else-if="activeTab === 'plans' && contractId" ref="listRef" class="min-h-0 flex-1" :customer-id="formData.customerId" :contract-id="contractId" />
 
     <!-- 回款 -->
-    <ReceivableList v-else-if="activeTab === 'receivables' && contractId" ref="listRef" :customer-id="formData.customerId" :contract-id="contractId" />
+    <ReceivableList v-else-if="activeTab === 'receivables' && contractId" ref="listRef" class="min-h-0 flex-1" :customer-id="formData.customerId" :contract-id="contractId" />
 
     <!-- 操作日志 -->
     <CrmOperateLogs v-else-if="activeTab === 'log' && contractId" :biz-id="contractId" :biz-type="bizType" />
@@ -152,14 +152,14 @@ definePage({
 })
 
 const bizType = BizTypeEnum.CRM_CONTRACT
-const tabs: { key: string, title: string }[] = [ // tab 配置
+const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
   { key: 'followup', title: '跟进记录' },
   { key: 'plans', title: '回款计划' },
   { key: 'receivables', title: '回款' },
   { key: 'team', title: '团队成员' },
   { key: 'log', title: '操作日志' },
-]
+] // tab 配置
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -177,6 +177,7 @@ const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表
 const contractId = computed(() => Number(props.id))
 const products = computed<Record<string, any>[]>(() => Array.isArray(formData.value.products) ? formData.value.products : [])
 const activeTab = computed(() => tabs[tabIndex.value].key)
+const isPagingTab = computed(() => ['plans', 'receivables'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:contract:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:contract:delete']))
 const canCreatePlan = computed(() => hasAccessByCodes(['crm:receivable-plan:create']))

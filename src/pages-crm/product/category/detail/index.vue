@@ -57,10 +57,10 @@ definePage({
 const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
 ]
-const detailFields: { label: string, prop: string }[] = [ // 基本信息字段
+const detailFields: { label: string, prop: string }[] = [
   { label: '分类名称', prop: 'name' },
   { label: '父级编号', prop: 'parentId' },
-]
+] // 基本信息字段
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()

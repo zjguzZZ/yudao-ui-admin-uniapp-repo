@@ -63,9 +63,9 @@ import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 
-const dictFilters = [ // 字典筛选项（上架状态用 picker）
+const dictFilters = [
   { prop: 'status', label: '上架状态', dictType: DICT_TYPE.CRM_PRODUCT_STATUS },
-]
+] // 字典筛选项（上架状态用 picker）
 
 const visible = ref(false) // 搜索弹窗显示状态
 const pickerVisible = reactive<Record<string, boolean>>({}) // 字典选择器显示状态

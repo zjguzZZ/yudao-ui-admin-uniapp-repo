@@ -1,26 +1,37 @@
 <template>
   <!-- 客户下的商机列表（卡片样式对齐商机列表页） -->
-  <view class="p-24rpx pb-160rpx">
-    <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm" @click="handleDetail(item)">
-      <view class="mb-16rpx flex items-start justify-between gap-16rpx">
-        <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
-          {{ item.name || '-' }}
+  <view class="min-h-0 flex flex-1 flex-col">
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="10"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      empty-view-text="暂无商机"
+      @query="queryList"
+    >
+      <view class="p-24rpx pb-160rpx">
+        <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm" @click="handleDetail(item)">
+          <view class="mb-16rpx flex items-start justify-between gap-16rpx">
+            <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
+              {{ item.name || '-' }}
+            </view>
+            <wd-tag v-if="item.statusName" type="primary" variant="plain">
+              {{ item.statusName }}
+            </wd-tag>
+          </view>
+          <view v-if="item.totalPrice != null" class="mb-12rpx text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">金额：</text>{{ Number(item.totalPrice).toFixed(2) }}
+          </view>
+          <view v-if="item.ownerUserName" class="text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">负责人：</text>{{ item.ownerUserName }}
+          </view>
         </view>
-        <wd-tag v-if="item.statusName" type="primary" variant="plain">
-          {{ item.statusName }}
-        </wd-tag>
       </view>
-      <view v-if="item.totalPrice != null" class="mb-12rpx text-28rpx text-[#666]">
-        <text class="mr-8rpx text-[#999]">金额：</text>{{ Number(item.totalPrice).toFixed(2) }}
-      </view>
-      <view v-if="item.ownerUserName" class="text-28rpx text-[#666]">
-        <text class="mr-8rpx text-[#999]">负责人：</text>{{ item.ownerUserName }}
-      </view>
-    </view>
-    <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无商机" />
-    <view v-if="loading" class="py-48rpx text-center text-28rpx text-[#999]">
-      加载中...
-    </view>
+    </z-paging>
   </view>
 </template>
 
@@ -29,28 +40,30 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getBusinessPageByCustomer } from '@/api/crm/business'
 
 const props = defineProps<{ customerId: number }>()
-const loading = ref(false) // 列表加载状态
 const list = ref<Record<string, any>[]>([]) // 商机列表
+const pagingRef = ref<any>() // 分页组件引用
 
-/** 加载商机 */
-async function getList() {
+/** 查询列表 */
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.customerId) {
+    pagingRef.value?.complete([])
     return
   }
-  loading.value = true
   try {
-    // TODO @AI：是不是要翻页？？？
     const data = await getBusinessPageByCustomer({
-      pageNo: 1,
-      pageSize: 20,
+      pageNo,
+      pageSize,
       customerId: props.customerId,
     })
-    list.value = data.list
+    pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
-    list.value = []
-  } finally {
-    loading.value = false
+    pagingRef.value?.complete(false)
   }
+}
+
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 查看详情 */
@@ -63,18 +76,17 @@ function openAdd() {
   uni.navigateTo({ url: `/pages-crm/business/form/index?customerId=${props.customerId}` })
 }
 
-watch(() => props.customerId, () => getList())
+watch(() => props.customerId, () => reload())
 
-defineExpose({ getList, openAdd })
+defineExpose({ reload, getList: reload, openAdd })
 
 /** 初始化 */
 onMounted(() => {
-  getList()
-  uni.$on('crm:business:reload', getList)
+  uni.$on('crm:business:reload', reload)
 })
 
 /** 卸载 */
 onUnmounted(() => {
-  uni.$off('crm:business:reload', getList)
+  uni.$off('crm:business:reload', reload)
 })
 </script>

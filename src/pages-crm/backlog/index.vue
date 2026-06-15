@@ -50,7 +50,7 @@ definePage({
   },
 })
 
-const tabs = [ // 待办分类
+const tabs = [
   { key: 'customerTodayContact', title: '今日需联系客户', getCount: getTodayContactCustomerCount },
   { key: 'clueFollow', title: '分配给我的线索', getCount: getFollowClueCount },
   { key: 'customerFollow', title: '分配给我的客户', getCount: getFollowCustomerCount },
@@ -59,7 +59,7 @@ const tabs = [ // 待办分类
   { key: 'receivableAudit', title: '待审核回款', getCount: getAuditReceivableCount },
   { key: 'receivablePlanRemind', title: '待回款提醒', getCount: getReceivablePlanRemindCount },
   { key: 'contractRemind', title: '即将到期的合同', getCount: getRemindContractCount },
-]
+] // 待办分类
 
 const tabIndex = ref(0) // 当前待办分类
 const counts = ref<Record<string, number>>({}) // 待办数量

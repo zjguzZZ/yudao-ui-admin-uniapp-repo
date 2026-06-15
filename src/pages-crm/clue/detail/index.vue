@@ -9,7 +9,7 @@
 
     <!-- 详情分类 -->
     <view class="bg-white">
-      <wd-tabs v-model="tabIndex">
+      <wd-tabs v-model="tabIndex" slidable="always">
         <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
       </wd-tabs>
     </view>

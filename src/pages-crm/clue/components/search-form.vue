@@ -31,7 +31,7 @@
           <text class="text-28rpx" :class="formData[dict.prop] === -1 ? 'text-[#999]' : 'text-[#333]'">
             {{ getDictDisplay(dict.dictType, formData[dict.prop]) }}
           </text>
-          <wd-icon name="arrow-down" size="32rpx" color="#666" />
+          <wd-icon name="arrow-right" size="32rpx" color="#666" />
         </view>
         <wd-picker
           v-model:visible="pickerVisible[dict.prop]"

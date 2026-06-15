@@ -8,7 +8,7 @@
       @click="openFilter(filter)"
     >
       <text class="text-26rpx text-[#333]">{{ getFilterLabel(filter) }}</text>
-      <wd-icon name="arrow-down" size="28rpx" color="#999" />
+      <wd-icon name="caret-down" size="28rpx" color="#999" />
     </view>
     <wd-picker
       v-model:visible="pickerVisible"

@@ -18,7 +18,8 @@
     <wd-cell-group v-if="activeTab === 'basic'" border>
       <wd-cell title="回款编号" :value="formData.no || '-'" />
       <wd-cell title="客户名称" :value="formData.customerName || '-'" />
-      <wd-cell title="合同名称" :value="formData.contract?.name || '-'" />
+      <wd-cell title="合同编号" :value="formData.contract?.no || '-'" />
+      <wd-cell title="合同金额" :value="formData.contract?.totalPrice != null && formData.contract?.totalPrice !== '' ? Number(formData.contract.totalPrice).toFixed(2) : '-'" />
       <wd-cell title="回款方式">
         <dict-tag v-if="formData.returnType != null && formData.returnType !== ''" :type="DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE" :value="formData.returnType" />
         <text v-else>-</text>

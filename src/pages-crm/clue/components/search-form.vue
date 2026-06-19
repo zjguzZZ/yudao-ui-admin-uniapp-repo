@@ -19,6 +19,25 @@
         </view>
         <wd-input v-model="formData.mobile" placeholder="请输入手机" clearable />
       </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          转化状态
+        </view>
+        <view class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx" @click="pickerVisible.transformStatus = true">
+          <text class="text-28rpx text-[#333]">
+            {{ getTransformStatusLabel(formData.transformStatus) }}
+          </text>
+          <wd-icon name="arrow-right" size="32rpx" color="#666" />
+        </view>
+        <wd-picker
+          v-model:visible="pickerVisible.transformStatus"
+          :model-value="formData.transformStatus"
+          :columns="transformStatusOptions"
+          label-key="label"
+          value-key="value"
+          @confirm="({ value }) => formData.transformStatus = value[0]"
+        />
+      </view>
       <view
         v-for="dict in dictFilters"
         :key="dict.prop"
@@ -68,12 +87,17 @@ const dictFilters = [
   { prop: 'industryId', label: '客户行业', dictType: DICT_TYPE.CRM_CUSTOMER_INDUSTRY },
   { prop: 'level', label: '客户级别', dictType: DICT_TYPE.CRM_CUSTOMER_LEVEL },
 ] // 字典筛选项（来源/行业/级别用 picker，选项较多）
+const transformStatusOptions = [
+  { label: '未转化', value: false },
+  { label: '已转化', value: true },
+] // 转化状态选项
 
 const visible = ref(false) // 搜索弹窗显示状态
 const pickerVisible = reactive<Record<string, boolean>>({}) // 字典选择器显示状态
 const formData = reactive<Record<string, any>>({
   name: undefined,
   mobile: undefined,
+  transformStatus: false,
   source: -1,
   industryId: -1,
   level: -1,
@@ -93,12 +117,18 @@ function getDictDisplay(dictType: string, value: number) {
   return getWotPickerDisplay(getDictColumns(dictType), value, { placeholder: '全部' })
 }
 
+/** 转化状态当前展示文案 */
+function getTransformStatusLabel(value: boolean) {
+  return transformStatusOptions.find(item => item.value === value)?.label || '未转化'
+}
+
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
   emit('search', {
     name: formData.name,
     mobile: formData.mobile,
+    transformStatus: formData.transformStatus,
     source: formData.source === -1 ? undefined : formData.source,
     industryId: formData.industryId === -1 ? undefined : formData.industryId,
     level: formData.level === -1 ? undefined : formData.level,
@@ -109,6 +139,7 @@ function handleSearch() {
 function handleReset() {
   formData.name = undefined
   formData.mobile = undefined
+  formData.transformStatus = false
   formData.source = -1
   formData.industryId = -1
   formData.level = -1

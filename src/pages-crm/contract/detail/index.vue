@@ -52,6 +52,14 @@
             <text class="line-clamp-1">{{ row.productNo || '-' }}</text>
           </view>
           <view class="mb-8rpx flex items-center text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">产品单位：</text>
+            <text class="line-clamp-1">{{ getDictLabel(DICT_TYPE.CRM_PRODUCT_UNIT, row.productUnit) || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex items-center text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">产品价格：</text>
+            <text class="line-clamp-1">{{ formatMoney(row.productPrice) }}</text>
+          </view>
+          <view class="mb-8rpx flex items-center text-26rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">数量：</text>
             <text class="line-clamp-1">{{ row.count ?? '-' }}</text>
           </view>
@@ -65,14 +73,17 @@
           </view>
         </view>
         <wd-empty v-if="products.length === 0" icon="content" tip="暂无产品" />
+        <view v-else class="border-t border-[#f5f5f5] px-24rpx py-20rpx">
+          <view class="flex items-center justify-between text-28rpx">
+            <text class="text-[#999]">产品总金额</text>
+            <text class="text-[#333]">{{ formatMoney(totalProductPrice) }}</text>
+          </view>
+        </view>
       </view>
     </template>
 
     <!-- 跟进记录 -->
     <CrmFollowupRecords v-else-if="activeTab === 'followup' && contractId" ref="followupRef" embedded :biz-id="contractId" :biz-type="bizType" />
-
-    <!-- 团队成员 -->
-    <CrmPermissionTeam v-else-if="activeTab === 'team' && contractId" ref="teamRef" embedded :biz-id="contractId" :biz-type="bizType" @quit-team="handleQuitTeam" @can-quit-change="(v: boolean) => teamCanQuit = v" />
 
     <!-- 回款计划 -->
     <ReceivablePlanList v-else-if="activeTab === 'plans' && contractId" ref="listRef" class="min-h-0 flex-1" :customer-id="formData.customerId" :contract-id="contractId" />
@@ -83,11 +94,23 @@
     <!-- 操作日志 -->
     <CrmOperateLogs v-else-if="activeTab === 'log' && contractId" :biz-id="contractId" :biz-type="bizType" />
 
+    <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
+    <CrmPermissionTeam
+      v-if="contractId"
+      v-show="activeTab === 'team'"
+      ref="teamRef"
+      embedded
+      :biz-id="contractId"
+      :biz-type="bizType"
+      @quit-team="handleQuitTeam"
+      @can-quit-change="(v: boolean) => teamCanQuit = v"
+    />
+
     <!-- 底部操作（按 tab 区分，只放当前模块的操作） -->
     <view v-if="hasFooter" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <template v-if="activeTab === 'basic'">
-          <wd-button v-if="canUpdate && isDraft" class="flex-1" type="warning" @click="handleEdit">
+          <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
             编辑
           </wd-button>
           <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
@@ -132,6 +155,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { deleteContract, getContract, submitContract } from '@/api/crm/contract'
 import { BizTypeEnum, CrmAuditStatusEnum } from '@/api/crm/permission'
+import { getDictLabel } from '@/hooks/useDict'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -171,16 +195,20 @@ const actionLoading = ref(false) // 业务操作状态
 const moreActionVisible = ref(false) // 业务操作菜单显示状态
 const teamCanQuit = ref(false) // 是否可退出团队
 const followupRef = ref<{ openAdd: () => void }>() // 跟进记录引用
-const teamRef = ref<{ openAdd: () => void, quit: () => void }>() // 团队成员引用
+const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: boolean, validateOwnerUser: boolean }>() // 团队成员引用（含权限校验）
 const listRef = ref<{ openAdd: () => void }>() // 当前关联列表引用
 const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表单引用
 const contractId = computed(() => Number(props.id))
 const products = computed<Record<string, any>[]>(() => Array.isArray(formData.value.products) ? formData.value.products : [])
+const totalProductPrice = computed(() => products.value.reduce((sum, row) => sum + Number(row.totalPrice || 0), 0)) // 产品总金额
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const isPagingTab = computed(() => ['plans', 'receivables'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:contract:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:contract:delete']))
 const isDraft = computed(() => Number(formData.value.auditStatus) === CrmAuditStatusEnum.DRAFT) // 未提交（草稿）
+const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
+const validateOwnerUser = computed(() => teamRef.value?.validateOwnerUser ?? false) // 负责人权限
+const canEdit = computed(() => canUpdate.value && isDraft.value && validateWrite.value) // 可编辑（草稿 + 菜单权限 + 读写权限）
 const canCreatePlan = computed(() => hasAccessByCodes(['crm:receivable-plan:create']))
 const canCreateReceivable = computed(() => hasAccessByCodes(['crm:receivable:create']))
 const moreActions = computed(() => {
@@ -188,9 +216,10 @@ const moreActions = computed(() => {
   if (!data?.id) {
     return []
   }
-  const actions: { name: string, value: string }[] = [
-    { name: '转移', value: 'transfer' },
-  ]
+  const actions: { name: string, value: string }[] = []
+  if (validateOwnerUser.value) {
+    actions.push({ name: '转移', value: 'transfer' })
+  }
   if (isDraft.value) {
     actions.push({ name: '提交审核', value: 'submit' })
   } else {
@@ -203,7 +232,7 @@ const hasFooter = computed(() => {
     case 'log':
       return false
     case 'basic':
-      return canUpdate.value || canDelete.value || moreActions.value.length > 0
+      return canEdit.value || canDelete.value || moreActions.value.length > 0
     case 'followup':
       return true
     case 'team':

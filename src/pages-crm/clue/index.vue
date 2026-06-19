@@ -86,7 +86,7 @@ const sceneTabs = [
 const { hasAccessByCodes } = useAccess()
 const list = ref<Clue[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>({ transformStatus: false }) // 查询参数
 const sceneTabIndex = ref(0) // 当前归属场景下标
 const sceneType = computed(() => sceneTabs[sceneTabIndex.value].value)
 
@@ -112,7 +112,7 @@ function handleSceneChange({ index }: { index: number }) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Record<string, any>) {
+function handleQuery(data: Record<string, any> = { transformStatus: false }) {
   queryParams.value = { ...data }
   reload()
 }

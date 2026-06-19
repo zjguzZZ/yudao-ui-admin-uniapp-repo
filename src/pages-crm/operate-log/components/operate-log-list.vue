@@ -8,7 +8,7 @@
       >
         <view class="mb-12rpx flex items-center justify-between gap-16rpx">
           <text class="min-w-0 flex-1 text-28rpx text-[#333] font-semibold">
-            {{ item.action || item.type || item.subType || '操作记录' }}
+            {{ item.action || '-' }}
           </text>
           <text class="shrink-0 text-26rpx text-[#999]">
             {{ formatDateTime(item.createTime) || '-' }}

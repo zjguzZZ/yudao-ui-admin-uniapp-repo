@@ -7,6 +7,9 @@
       @click-left="handleBack"
     />
 
+    <!-- 搜索组件 -->
+    <SearchForm @search="handleQuery" @reset="handleReset" />
+
     <!-- 归属场景 -->
     <view class="bg-white">
       <wd-tabs v-model="sceneTabIndex" shrink @change="handleSceneChange">
@@ -67,6 +70,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
+import SearchForm from './components/search-form.vue'
 
 definePage({
   style: {
@@ -106,6 +110,17 @@ async function queryList(pageNo: number, pageSize: number) {
 function handleSceneChange({ index }: { index: number }) {
   sceneTabIndex.value = index
   reload()
+}
+
+/** 搜索按钮操作 */
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = { ...data }
+  reload()
+}
+
+/** 重置按钮操作 */
+function handleReset() {
+  handleQuery()
 }
 
 /** 重新加载 */

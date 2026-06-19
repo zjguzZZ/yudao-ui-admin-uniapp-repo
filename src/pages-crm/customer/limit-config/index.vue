@@ -43,10 +43,10 @@
             </wd-tag>
           </view>
           <view class="mb-12rpx text-28rpx text-[#666]">
-            <text class="text-[#999]">适用人群：</text>{{ formatIds(item.userIds) }}
+            <text class="text-[#999]">适用人群：</text>{{ formatUserNames(item) }}
           </view>
           <view class="mb-12rpx text-28rpx text-[#666]">
-            <text class="text-[#999]">适用部门：</text>{{ formatIds(item.deptIds) }}
+            <text class="text-[#999]">适用部门：</text>{{ formatDeptNames(item) }}
           </view>
           <view
             v-if="item.type === LimitConfType.CUSTOMER_QUANTITY_LIMIT"
@@ -342,10 +342,16 @@ function formatConfigTitle(item: CustomerLimitConfig) {
   return item.type === LimitConfType.CUSTOMER_QUANTITY_LIMIT ? '拥有客户数限制' : '锁定客户数限制'
 }
 
-/** 格式化编号列表 */
-function formatIds(value: CustomerLimitConfig['userIds']) {
-  const ids = normalizeIds(value)
-  return ids.length > 0 ? ids.join('、') : '全部'
+/** 格式化适用人群（昵称，回退「全部」） */
+function formatUserNames(item: CustomerLimitConfig) {
+  const names = (item.users || []).map(user => user.nickname).filter(Boolean)
+  return names.length > 0 ? names.join('、') : '全部'
+}
+
+/** 格式化适用部门（名称，回退「全部」） */
+function formatDeptNames(item: CustomerLimitConfig) {
+  const names = (item.depts || []).map(dept => dept.name).filter(Boolean)
+  return names.length > 0 ? names.join('、') : '全部'
 }
 
 /** 初始化 */

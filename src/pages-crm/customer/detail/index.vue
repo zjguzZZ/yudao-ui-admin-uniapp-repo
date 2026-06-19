@@ -49,9 +49,6 @@
     <!-- 跟进记录 -->
     <CrmFollowupRecords v-else-if="activeTab === 'followup' && customerId" ref="followupRef" embedded :biz-id="customerId" :biz-type="bizType" />
 
-    <!-- 团队成员 -->
-    <CrmPermissionTeam v-else-if="activeTab === 'team' && customerId" ref="teamRef" embedded :biz-id="customerId" :biz-type="bizType" @quit-team="handleQuitTeam" @can-quit-change="(v: boolean) => teamCanQuit = v" />
-
     <!-- 操作日志 -->
     <CrmOperateLogs v-else-if="activeTab === 'log' && customerId" :biz-id="customerId" :biz-type="bizType" />
 
@@ -62,11 +59,23 @@
     <ReceivablePlanList v-else-if="activeTab === 'plans' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
     <ReceivableList v-else-if="activeTab === 'receivables' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
 
+    <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
+    <CrmPermissionTeam
+      v-if="customerId"
+      v-show="activeTab === 'team'"
+      ref="teamRef"
+      embedded
+      :biz-id="customerId"
+      :biz-type="bizType"
+      @quit-team="handleQuitTeam"
+      @can-quit-change="(v: boolean) => teamCanQuit = v"
+    />
+
     <!-- 底部操作（按 tab 区分，只放当前模块的操作） -->
     <view v-if="hasFooter" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <template v-if="activeTab === 'basic'">
-          <wd-button v-if="canUpdate" class="flex-1" type="warning" @click="handleEdit">
+          <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
             编辑
           </wd-button>
           <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
@@ -178,7 +187,7 @@ const actionLoading = ref(false) // 业务操作状态
 const moreActionVisible = ref(false) // 业务操作菜单显示状态
 const teamCanQuit = ref(false) // 是否可退出团队
 const followupRef = ref<{ openAdd: () => void }>() // 跟进记录引用
-const teamRef = ref<{ openAdd: () => void, quit: () => void }>() // 团队成员引用
+const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: boolean, validateOwnerUser: boolean }>() // 团队成员引用（含权限校验）
 const listRef = ref<{ openAdd: () => void }>() // 当前关联列表引用
 const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表单引用
 const distributeVisible = ref(false) // 分配弹窗显示状态
@@ -191,6 +200,9 @@ const activeTab = computed(() => activeTabConfig.value.key)
 const isPagingTab = computed(() => ['contacts', 'businesses', 'contracts', 'plans', 'receivables'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:customer:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:customer:delete']))
+const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
+const validateOwnerUser = computed(() => teamRef.value?.validateOwnerUser ?? false) // 负责人权限
+const canEdit = computed(() => canUpdate.value && validateWrite.value) // 可编辑（菜单权限 + 读写权限）
 const canRelatedAdd = computed(() => {
   const permission = activeTabConfig.value.addPermission
   return !!permission && hasAccessByCodes([permission])
@@ -200,15 +212,20 @@ const moreActions = computed(() => {
   if (!data?.id) {
     return []
   }
-  const actions = [
-    { name: '转移', value: 'transfer' },
-    { name: data.dealStatus ? '标记未成交' : '标记已成交', value: 'deal' },
-    { name: data.lockStatus ? '解锁客户' : '锁定客户', value: 'lock' },
-  ]
+  const actions: { name: string, value: string }[] = []
+  if (validateOwnerUser.value) {
+    actions.push({ name: '转移', value: 'transfer' })
+  }
+  if (validateWrite.value) {
+    actions.push({ name: data.dealStatus ? '标记未成交' : '标记已成交', value: 'deal' })
+  }
+  if (validateOwnerUser.value) {
+    actions.push({ name: data.lockStatus ? '解锁客户' : '锁定客户', value: 'lock' })
+  }
   if (!data.ownerUserId) {
     actions.push({ name: '领取', value: 'receive' })
     actions.push({ name: '分配', value: 'distribute' })
-  } else {
+  } else if (validateOwnerUser.value) {
     actions.push({ name: '放入公海', value: 'putPool' })
   }
   return actions
@@ -218,7 +235,7 @@ const hasFooter = computed(() => {
     case 'log':
       return false
     case 'basic':
-      return canUpdate.value || canDelete.value || moreActions.value.length > 0
+      return canEdit.value || canDelete.value || moreActions.value.length > 0
     case 'followup':
       return true
     case 'team':

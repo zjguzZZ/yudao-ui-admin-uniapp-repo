@@ -53,6 +53,7 @@
 
       <!-- 产品清单 -->
       <CrmProductLines
+        ref="productLinesRef"
         v-model="formData.products"
         price-prop="businessPrice"
         :discount-percent="Number(formData.discountPercent || 0)"
@@ -110,6 +111,7 @@ const formData = ref<Business & Record<string, any>>({
   products: [],
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
+const productLinesRef = ref<{ validate: (options?: { requireAtLeastOne?: boolean }) => string | null }>() // 产品清单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
 const formSchema = createFormSchema({
   name: [{ required: true, message: '商机名称不能为空' }],
@@ -159,8 +161,9 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
-  if (!formData.value.products || formData.value.products.length === 0) {
-    toast.show('请至少添加一个产品')
+  const productError = productLinesRef.value?.validate({ requireAtLeastOne: true })
+  if (productError) {
+    toast.show(productError)
     return
   }
   formLoading.value = true

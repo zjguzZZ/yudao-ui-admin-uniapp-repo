@@ -25,6 +25,8 @@
         <wd-cell title="预计成交日期" :value="formatDate(formData.dealTime) || '-'" />
         <wd-cell title="商机金额" :value="formData.totalPrice != null && formData.totalPrice !== '' ? formatMoney(formData.totalPrice) : '-'" />
         <wd-cell title="整单折扣(%)" :value="formData.discountPercent || '-'" />
+        <wd-cell title="最后跟进时间" :value="formatDateTime(formData.contactLastTime) || '-'" />
+        <wd-cell title="最后跟进内容" :value="formData.contactLastContent || '-'" />
         <wd-cell title="备注" :value="formData.remark || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
       </wd-cell-group>
@@ -56,6 +58,12 @@
           </view>
         </view>
         <wd-empty v-if="!(formData.products && formData.products.length)" icon="content" tip="暂无产品" />
+        <view v-else class="border-t border-[#f5f5f5] px-24rpx py-20rpx">
+          <view class="flex items-center justify-between text-28rpx">
+            <text class="text-[#999]">产品总金额</text>
+            <text class="text-[#333]">{{ formatMoney(totalProductPrice) }}</text>
+          </view>
+        </view>
       </view>
     </template>
 
@@ -65,20 +73,29 @@
     <!-- 联系人 -->
     <ContactList v-else-if="activeTab === 'contacts' && businessId" ref="listRef" class="min-h-0 flex-1" :business-id="businessId" :customer-id="formData.customerId" />
 
-    <!-- 团队成员 -->
-    <CrmPermissionTeam v-else-if="activeTab === 'team' && businessId" ref="teamRef" embedded :biz-id="businessId" :biz-type="bizType" @quit-team="handleQuitTeam" @can-quit-change="(v: boolean) => teamCanQuit = v" />
-
     <!-- 合同 -->
     <ContractList v-else-if="activeTab === 'contracts' && businessId" ref="listRef" class="min-h-0 flex-1" :business-id="businessId" />
 
     <!-- 操作日志 -->
     <CrmOperateLogs v-else-if="activeTab === 'log' && businessId" :biz-id="businessId" :biz-type="bizType" />
 
+    <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
+    <CrmPermissionTeam
+      v-if="businessId"
+      v-show="activeTab === 'team'"
+      ref="teamRef"
+      embedded
+      :biz-id="businessId"
+      :biz-type="bizType"
+      @quit-team="handleQuitTeam"
+      @can-quit-change="(v: boolean) => teamCanQuit = v"
+    />
+
     <!-- 底部操作（按 tab 区分，只放当前模块的操作） -->
     <view v-if="hasFooter" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <template v-if="activeTab === 'basic'">
-          <wd-button v-if="canUpdate" class="flex-1" type="warning" @click="handleEdit">
+          <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
             编辑
           </wd-button>
           <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
@@ -163,24 +180,29 @@ const deleting = ref(false) // 删除状态
 const moreActionVisible = ref(false) // 业务操作菜单显示状态
 const teamCanQuit = ref(false) // 是否可退出团队
 const followupRef = ref<{ openAdd: () => void }>() // 跟进记录引用
-const teamRef = ref<{ openAdd: () => void, quit: () => void }>() // 团队成员引用
+const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: boolean, validateOwnerUser: boolean }>() // 团队成员引用（含权限校验）
 const listRef = ref<{ openAdd: () => void }>() // 当前关联列表引用
 const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表单引用
 const businessStatusFormRef = ref<InstanceType<typeof CrmBusinessStatusForm>>() // 变更商机状态引用
 const businessId = computed(() => Number(props.id))
+const totalProductPrice = computed(() => (Array.isArray(formData.value.products) ? formData.value.products : []).reduce((sum, row) => sum + Number(row.totalPrice || 0), 0)) // 产品总金额
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const isPagingTab = computed(() => ['contacts', 'contracts'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:business:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:business:delete']))
+const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
+const validateOwnerUser = computed(() => teamRef.value?.validateOwnerUser ?? false) // 负责人权限
+const canEdit = computed(() => canUpdate.value && validateWrite.value) // 可编辑（菜单权限 + 读写权限）
 const moreActions = computed(() => {
   const data = formData.value
   if (!data?.id) {
     return []
   }
-  const actions = [
-    { name: '转移', value: 'transfer' },
-  ]
-  if (!data.endStatus) {
+  const actions: { name: string, value: string }[] = []
+  if (validateOwnerUser.value) {
+    actions.push({ name: '转移', value: 'transfer' })
+  }
+  if (validateWrite.value && !data.endStatus) {
     actions.push({ name: '变更商机状态', value: 'status' })
   }
   return actions
@@ -190,7 +212,7 @@ const hasFooter = computed(() => {
     case 'log':
       return false
     case 'basic':
-      return canUpdate.value || canDelete.value || moreActions.value.length > 0
+      return canEdit.value || canDelete.value || moreActions.value.length > 0
     case 'followup':
       return true
     case 'team':

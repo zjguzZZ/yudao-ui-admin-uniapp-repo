@@ -48,12 +48,10 @@
             :params="{ customerId: formData.customerId }"
             placeholder="请选择客户签约人"
           />
-          <wd-form-item title="合同金额" title-width="200rpx" prop="totalPrice">
-            <wd-input v-model.number="formData.totalPrice" type="number" placeholder="请输入合同金额" clearable />
-          </wd-form-item>
           <wd-form-item title="整单折扣(%)" title-width="200rpx" prop="discountPercent">
             <wd-input v-model.number="formData.discountPercent" type="number" placeholder="请输入整单折扣(%)" clearable />
           </wd-form-item>
+          <wd-form-item title="折扣后金额" title-width="200rpx" prop="totalPrice" :value="formatMoney(formData.totalPrice)" />
           <wd-form-item title="备注" title-width="200rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
@@ -62,6 +60,7 @@
 
       <!-- 产品清单 -->
       <CrmProductLines
+        ref="productLinesRef"
         v-model="formData.products"
         price-prop="contractPrice"
         :discount-percent="Number(formData.discountPercent || 0)"
@@ -125,6 +124,7 @@ const formData = ref<Contract>({
   products: [],
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
+const productLinesRef = ref<{ validate: (options?: { requireAtLeastOne?: boolean }) => string | null }>() // 产品清单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
 const formSchema = createFormSchema({
   name: [{ required: true, message: '合同名称不能为空' }],
@@ -162,6 +162,12 @@ function handleProductTotalsChange(totalProductPrice: number, totalPrice: number
   formData.value.totalPrice = totalPrice
 }
 
+/** 格式化金额 */
+function formatMoney(value: any) {
+  const amount = Number(value)
+  return Number.isNaN(amount) ? '-' : amount.toFixed(2)
+}
+
 /** 应用页面预填参数 */
 function applyQueryDefaults() {
   if (props.id) {
@@ -197,6 +203,11 @@ async function getDetail() {
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
   if (!valid) {
+    return
+  }
+  const productError = productLinesRef.value?.validate()
+  if (productError) {
+    toast.show(productError)
     return
   }
   formLoading.value = true

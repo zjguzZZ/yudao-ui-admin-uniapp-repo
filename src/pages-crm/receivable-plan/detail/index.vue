@@ -18,7 +18,7 @@
     <wd-cell-group v-if="activeTab === 'basic'" border>
       <wd-cell title="客户名称" :value="formData.customerName || '-'" />
       <wd-cell title="合同编号" :value="formData.contractNo || '-'" />
-      <wd-cell title="期数" :value="formData.period || '-'" />
+      <wd-cell title="期数" :value="formData.period != null ? formData.period : '-'" />
       <wd-cell title="计划回款金额" :value="formData.price != null && formData.price !== '' ? Number(formData.price).toFixed(2) : '-'" />
       <wd-cell title="计划回款日期" :value="formatDate(formData.returnTime) || '-'" />
       <wd-cell title="提前提醒天数" :value="formData.remindDays || '-'" />
@@ -28,6 +28,7 @@
       </wd-cell>
       <wd-cell title="负责人" :value="formData.ownerUserName || '-'" />
       <wd-cell title="实际回款金额" :value="formData.receivable?.price != null && formData.receivable?.price !== '' ? Number(formData.receivable.price).toFixed(2) : '-'" />
+      <wd-cell title="未回款金额" :value="unreceivedPrice" />
       <wd-cell title="实际回款日期" :value="formatDate(formData.receivable?.returnTime) || '-'" />
       <wd-cell title="备注" :value="formData.remark || '-'" />
       <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
@@ -112,6 +113,15 @@ const activeTab = computed(() => tabs[tabIndex.value].key)
 const canUpdate = computed(() => hasAccessByCodes(['crm:receivable-plan:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:receivable-plan:delete']))
 const canCreateReceivable = computed(() => hasAccessByCodes(['crm:receivable:create']))
+const unreceivedPrice = computed(() => { // 未回款金额 = 计划金额 − 实际回款金额
+  const data = formData.value
+  if (data.price == null || data.price === '') {
+    return '-'
+  }
+  const received = data.receivable?.price
+  const unreceived = received != null && received !== '' ? Number(data.price) - Number(received) : Number(data.price)
+  return unreceived.toFixed(2)
+})
 const moreActions = computed(() => {
   const data = formData.value
   if (!data?.id) {

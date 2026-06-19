@@ -79,7 +79,7 @@ import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import CrmPicker from '@/pages-crm/components/crm-picker.vue'
 
-const props = defineProps<{ id?: number | any, customerId?: number | any, ownerUserId?: number | any, parentId?: number | any }>()
+const props = defineProps<{ id?: number | any, customerId?: number | any, ownerUserId?: number | any, parentId?: number | any, businessId?: number | any }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -109,6 +109,7 @@ const formData = ref<Contact>({
   detailAddress: '',
   contactNextTime: undefined,
   remark: '',
+  businessId: undefined,
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
@@ -143,6 +144,9 @@ async function getDetail() {
     }
     if (props.parentId) {
       formData.value.parentId = Number(props.parentId)
+    }
+    if (props.businessId) {
+      formData.value.businessId = Number(props.businessId)
     }
     return
   }

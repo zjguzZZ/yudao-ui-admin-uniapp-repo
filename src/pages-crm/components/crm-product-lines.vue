@@ -132,6 +132,28 @@ watch(
   },
 )
 
+/** 校验产品行：每行需选产品、价格与数量大于 0；requireAtLeastOne 时还要求至少一行。返回错误文案，无误返回 null */
+function validate(options?: { requireAtLeastOne?: boolean }): string | null {
+  if (products.value.length === 0) {
+    return options?.requireAtLeastOne ? '请至少添加一个产品' : null
+  }
+  for (let i = 0; i < products.value.length; i++) {
+    const row = products.value[i]
+    if (!row.productId) {
+      return `请选择第 ${i + 1} 个产品`
+    }
+    if (!(Number(row[props.priceProp]) > 0)) {
+      return `请填写第 ${i + 1} 个产品的${priceLabel.value}`
+    }
+    if (!(Number(row.count) > 0)) {
+      return `请填写第 ${i + 1} 个产品的数量`
+    }
+  }
+  return null
+}
+
+defineExpose({ validate })
+
 /** 添加产品 */
 function handleAdd() {
   products.value.push({

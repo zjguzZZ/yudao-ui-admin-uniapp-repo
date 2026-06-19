@@ -16,9 +16,9 @@
 
     <!-- 基本信息 -->
     <wd-cell-group v-if="activeTab === 'basic'" border>
-      <template v-for="field in detailFields" :key="field.prop">
-        <wd-cell :title="field.label" :value="formatValue(field)" />
-      </template>
+      <wd-cell title="分类名称" :value="formData.name || '-'" />
+      <wd-cell title="父级编号" :value="formatParentId" />
+      <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
     </wd-cell-group>
 
     <!-- 底部操作 -->
@@ -45,6 +45,7 @@ import { computed, onMounted, ref } from 'vue'
 import { deleteProductCategory, getProductCategory } from '@/api/crm/product/category'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
+import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | any }>()
 definePage({
@@ -57,10 +58,6 @@ definePage({
 const tabs: { key: string, title: string }[] = [
   { key: 'basic', title: '基本信息' },
 ]
-const detailFields: { label: string, prop: string }[] = [
-  { label: '分类名称', prop: 'name' },
-  { label: '父级编号', prop: 'parentId' },
-] // 基本信息字段
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
@@ -72,21 +69,18 @@ const categoryId = computed(() => Number(props.id))
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const canUpdate = computed(() => hasAccessByCodes(['crm:product-category:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:product-category:delete']))
+const formatParentId = computed(() => {
+  if (formData.value.parentId === 0) {
+    return '顶级分类'
+  }
+  return formData.value.parentId != null ? String(formData.value.parentId) : '-'
+}) // 父级编号展示
 const hasFooter = computed(() => {
   if (activeTab.value === 'basic') {
     return canUpdate.value || canDelete.value
   }
   return false
 })
-
-/** 格式化基本信息字段值 */
-function formatValue(field: { prop: string }) {
-  const value = formData.value[field.prop]
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  return String(value)
-}
 
 /** 返回上一页 */
 function handleBack() {

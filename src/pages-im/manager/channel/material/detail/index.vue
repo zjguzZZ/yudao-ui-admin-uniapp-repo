@@ -32,8 +32,12 @@
 
       <!-- 站内正文 -->
       <view v-if="formData?.type === 1 && formData?.content" class="mt-20rpx bg-white p-24rpx">
-        <view class="mb-16rpx text-28rpx text-[#999]">正文</view>
-        <view class="text-28rpx text-[#333] leading-44rpx">{{ formData.content }}</view>
+        <view class="mb-16rpx text-28rpx text-[#999]">
+          正文
+        </view>
+        <view class="text-28rpx text-[#333] leading-44rpx">
+          {{ formData.content }}
+        </view>
       </view>
     </view>
 

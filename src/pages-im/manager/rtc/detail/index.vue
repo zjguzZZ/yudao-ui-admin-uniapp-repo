@@ -49,8 +49,12 @@
           class="flex items-center justify-between border-t border-t-[#f2f3f5] px-24rpx py-16rpx"
         >
           <view class="min-w-0 flex-1">
-            <view class="line-clamp-1 text-28rpx text-[#333]">{{ member.userNickname || `用户 ${member.userId}` }}</view>
-            <view class="mt-4rpx text-22rpx text-[#999]">接通 {{ formatDateTime(member.acceptTime) || '-' }}</view>
+            <view class="line-clamp-1 text-28rpx text-[#333]">
+              {{ member.userNickname || `用户 ${member.userId}` }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              接通 {{ formatDateTime(member.acceptTime) || '-' }}
+            </view>
           </view>
           <view class="flex items-center gap-12rpx">
             <dict-tag :type="DICT_TYPE.IM_RTC_PARTICIPANT_ROLE" :value="member.role" />

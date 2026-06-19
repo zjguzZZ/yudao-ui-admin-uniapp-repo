@@ -13,19 +13,17 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <!-- TODO @AI：userselect 组件 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          用户编号
+          用户
         </view>
-        <wd-input v-model="formData.userId" type="number" placeholder="请输入用户编号" clearable />
+        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择用户" />
       </view>
-      <!-- TODO @AI：userselect 组件 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          好友编号
+          好友
         </view>
-        <wd-input v-model="formData.friendUserId" type="number" placeholder="请输入好友编号" clearable />
+        <UserPicker ref="friendPickerRef" v-model="formData.friendUserId" type="radio" placeholder="请选择好友" />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -44,7 +42,22 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <!-- TODO @AI：免打扰筛选 -->
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          免打扰
+        </view>
+        <wd-radio-group v-model="formData.silent" type="button">
+          <wd-radio :value="-1">
+            全部
+          </wd-radio>
+          <wd-radio :value="1">
+            是
+          </wd-radio>
+          <wd-radio :value="0">
+            否
+          </wd-radio>
+        </wd-radio-group>
+      </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           添加时间
@@ -95,6 +108,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import UserPicker from '@/components/system-select/user-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -106,10 +120,13 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const userPickerRef = ref<any>() // 用户选择器引用
+const friendPickerRef = ref<any>() // 好友选择器引用
 const formData = reactive({
-  userId: undefined as string | undefined,
-  friendUserId: undefined as string | undefined,
+  userId: undefined as number | undefined,
+  friendUserId: undefined as number | undefined,
   status: -1, // -1 表示全部
+  silent: -1, // -1 全部，1 免打扰，0 正常
   addTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -120,13 +137,16 @@ const tempAddTime = ref<[number, number]>([Date.now(), Date.now()]) // 添加时
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.userId) {
-    conditions.push(`用户:${formData.userId}`)
+    conditions.push(`用户:${userPickerRef.value?.getUserNickname(formData.userId) || formData.userId}`)
   }
   if (formData.friendUserId) {
-    conditions.push(`好友:${formData.friendUserId}`)
+    conditions.push(`好友:${friendPickerRef.value?.getUserNickname(formData.friendUserId) || formData.friendUserId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_FRIEND_STATUS, formData.status)}`)
+  }
+  if (formData.silent !== -1) {
+    conditions.push(`免打扰:${formData.silent === 1 ? '是' : '否'}`)
   }
   if (formData.addTime?.[0] && formData.addTime?.[1]) {
     conditions.push(`添加时间:${formatDate(formData.addTime[0])}~${formatDate(formData.addTime[1])}`)
@@ -150,8 +170,10 @@ function handleAddTime1Confirm() {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    ...formData,
+    userId: formData.userId,
+    friendUserId: formData.friendUserId,
     status: formData.status === -1 ? undefined : formData.status,
+    silent: formData.silent === -1 ? undefined : formData.silent === 1,
     addTime: formatDateRange(formData.addTime),
   })
 }
@@ -161,6 +183,7 @@ function handleReset() {
   formData.userId = undefined
   formData.friendUserId = undefined
   formData.status = -1
+  formData.silent = -1
   formData.addTime = [undefined, undefined]
   visible.value = false
   emit('reset')

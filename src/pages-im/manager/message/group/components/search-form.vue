@@ -21,9 +21,31 @@
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          发送人编号
+          发送人
         </view>
-        <wd-input v-model="formData.senderId" type="number" placeholder="请输入发送人编号" clearable />
+        <UserPicker ref="senderPickerRef" v-model="formData.senderId" type="radio" placeholder="请选择发送人" />
+      </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          消息类型
+        </view>
+        <view
+          class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
+          @click="typeVisible = true"
+        >
+          <text class="text-28rpx text-[#333]">
+            {{ getWotPickerDisplay(typeColumns, formData.type, { valueKey: 'value', labelKey: 'label', placeholder: '全部' }) }}
+          </text>
+          <wd-icon name="arrow-down" size="32rpx" color="#666" />
+        </view>
+        <wd-picker
+          v-model:visible="typeVisible"
+          :model-value="formData.type"
+          :columns="typeColumns"
+          label-key="label"
+          value-key="value"
+          @confirm="({ value }) => formData.type = Number(value[0])"
+        />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -81,8 +103,12 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import UserPicker from '@/components/system-select/user-picker.vue'
+import { getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -90,9 +116,13 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const typeVisible = ref(false) // 消息类型选择器显示状态
+const senderPickerRef = ref<any>() // 发送人选择器引用
+const typeColumns = [{ label: '全部', value: -1 }, ...getIntDictOptions(DICT_TYPE.IM_MESSAGE_TYPE)] // 消息类型选项（-1 全部）
 const formData = reactive({
   groupId: undefined as string | undefined,
-  senderId: undefined as string | undefined,
+  senderId: undefined as number | undefined,
+  type: -1, // -1 表示全部
   content: undefined as string | undefined,
   sendTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -107,7 +137,10 @@ const placeholder = computed(() => {
     conditions.push(`群:${formData.groupId}`)
   }
   if (formData.senderId) {
-    conditions.push(`发送人:${formData.senderId}`)
+    conditions.push(`发送人:${senderPickerRef.value?.getUserNickname(formData.senderId) || formData.senderId}`)
+  }
+  if (formData.type !== -1) {
+    conditions.push(`类型:${getWotPickerDisplay(typeColumns, formData.type, { valueKey: 'value', labelKey: 'label', placeholder: '' })}`)
   }
   if (formData.content) {
     conditions.push(`内容:${formData.content}`)
@@ -134,7 +167,10 @@ function handleSendTime1Confirm() {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    ...formData,
+    groupId: formData.groupId,
+    senderId: formData.senderId,
+    type: formData.type === -1 ? undefined : formData.type,
+    content: formData.content,
     sendTime: formatDateRange(formData.sendTime),
   })
 }
@@ -143,6 +179,7 @@ function handleSearch() {
 function handleReset() {
   formData.groupId = undefined
   formData.senderId = undefined
+  formData.type = -1
   formData.content = undefined
   formData.sendTime = [undefined, undefined]
   visible.value = false

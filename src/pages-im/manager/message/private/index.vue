@@ -38,7 +38,9 @@
             </view>
             <dict-tag :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="item.type" />
           </view>
-          <view class="mt-10rpx line-clamp-2 text-26rpx text-[#666]">{{ getMessageSummary(item.type, item.content) }}</view>
+          <view class="line-clamp-2 mt-10rpx text-26rpx text-[#666]">
+            {{ getMessageSummary(item.type, item.content) }}
+          </view>
           <view class="mt-12rpx flex items-center justify-between text-24rpx text-[#999]">
             <text>{{ formatDateTime(item.sendTime) }}</text>
             <text>{{ getDictLabel(DICT_TYPE.IM_PRIVATE_MESSAGE_STATUS, item.status) }}</text>
@@ -57,7 +59,7 @@ import { getDictLabel } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { getMessageSummary } from '@/utils/im/message'
+import { getMessageSummary } from '@/pages-im/utils/message'
 import SearchForm from './components/search-form.vue'
 
 const props = defineProps<{

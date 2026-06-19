@@ -13,19 +13,17 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <!-- TODO @AI：userselect 组件 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          发起人编号
+          发起人
         </view>
-        <wd-input v-model="formData.fromUserId" type="number" placeholder="请输入发起人编号" clearable />
+        <UserPicker ref="fromPickerRef" v-model="formData.fromUserId" type="radio" placeholder="请选择发起人" />
       </view>
       <view class="yd-search-form-item">
-        <!-- TODO @AI：userselect 组件 -->
         <view class="yd-search-form-label">
-          接收人编号
+          接收人
         </view>
-        <wd-input v-model="formData.toUserId" type="number" placeholder="请输入接收人编号" clearable />
+        <UserPicker ref="toPickerRef" v-model="formData.toUserId" type="radio" placeholder="请选择接收人" />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -44,7 +42,23 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <!-- TODO @AI：添加来源 -->
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          添加来源
+        </view>
+        <wd-radio-group v-model="formData.addSource" type="button">
+          <wd-radio :value="-1">
+            全部
+          </wd-radio>
+          <wd-radio
+            v-for="dict in getIntDictOptions(DICT_TYPE.IM_FRIEND_ADD_SOURCE)"
+            :key="dict.value"
+            :value="dict.value"
+          >
+            {{ dict.label }}
+          </wd-radio>
+        </wd-radio-group>
+      </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           申请时间
@@ -95,6 +109,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import UserPicker from '@/components/system-select/user-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -106,10 +121,13 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const fromPickerRef = ref<any>() // 发起人选择器引用
+const toPickerRef = ref<any>() // 接收人选择器引用
 const formData = reactive({
-  fromUserId: undefined as string | undefined,
-  toUserId: undefined as string | undefined,
+  fromUserId: undefined as number | undefined,
+  toUserId: undefined as number | undefined,
   handleResult: -1, // -1 表示全部
+  addSource: -1, // -1 表示全部
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -120,13 +138,16 @@ const tempCreateTime = ref<[number, number]>([Date.now(), Date.now()]) // 申请
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.fromUserId) {
-    conditions.push(`发起人:${formData.fromUserId}`)
+    conditions.push(`发起人:${fromPickerRef.value?.getUserNickname(formData.fromUserId) || formData.fromUserId}`)
   }
   if (formData.toUserId) {
-    conditions.push(`接收人:${formData.toUserId}`)
+    conditions.push(`接收人:${toPickerRef.value?.getUserNickname(formData.toUserId) || formData.toUserId}`)
   }
   if (formData.handleResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.IM_FRIEND_REQUEST_HANDLE_RESULT, formData.handleResult)}`)
+  }
+  if (formData.addSource !== -1) {
+    conditions.push(`来源:${getDictLabel(DICT_TYPE.IM_FRIEND_ADD_SOURCE, formData.addSource)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`申请时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -150,8 +171,10 @@ function handleCreateTime1Confirm() {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    ...formData,
+    fromUserId: formData.fromUserId,
+    toUserId: formData.toUserId,
     handleResult: formData.handleResult === -1 ? undefined : formData.handleResult,
+    addSource: formData.addSource === -1 ? undefined : formData.addSource,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -161,6 +184,7 @@ function handleReset() {
   formData.fromUserId = undefined
   formData.toUserId = undefined
   formData.handleResult = -1
+  formData.addSource = -1
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

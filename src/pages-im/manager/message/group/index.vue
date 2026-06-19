@@ -31,11 +31,17 @@
           @click="handleDetail(item)"
         >
           <view class="flex items-center justify-between">
-            <view class="line-clamp-1 flex-1 text-30rpx text-[#333] font-semibold">{{ item.groupName || `群 ${item.groupId}` }}</view>
+            <view class="line-clamp-1 flex-1 text-30rpx text-[#333] font-semibold">
+              {{ item.groupName || `群 ${item.groupId}` }}
+            </view>
             <dict-tag :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="item.type" />
           </view>
-          <view class="mt-8rpx text-26rpx text-[#999]">发送人：{{ item.senderNickname || `用户 ${item.senderId}` }}</view>
-          <view class="mt-8rpx line-clamp-2 text-26rpx text-[#666]">{{ getMessageSummary(item.type, item.content) }}</view>
+          <view class="mt-8rpx text-26rpx text-[#999]">
+            发送人：{{ item.senderNickname || `用户 ${item.senderId}` }}
+          </view>
+          <view class="line-clamp-2 mt-8rpx text-26rpx text-[#666]">
+            {{ getMessageSummary(item.type, item.content) }}
+          </view>
           <view class="mt-12rpx flex items-center justify-between text-24rpx text-[#999]">
             <text>{{ formatDateTime(item.sendTime) }}</text>
             <text>{{ getDictLabel(DICT_TYPE.IM_GROUP_MESSAGE_STATUS, item.status) }}</text>
@@ -54,7 +60,7 @@ import { getDictLabel } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { getMessageSummary } from '@/utils/im/message'
+import { getMessageSummary } from '@/pages-im/utils/message'
 import SearchForm from './components/search-form.vue'
 
 const props = defineProps<{

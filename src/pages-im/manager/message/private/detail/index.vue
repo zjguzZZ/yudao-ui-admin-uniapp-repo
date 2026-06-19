@@ -25,7 +25,11 @@
 
       <!-- 消息内容 -->
       <view class="mt-20rpx bg-white p-24rpx">
-        <view class="mb-16rpx text-28rpx text-[#999]">消息内容</view>
+        <view class="mb-16rpx text-28rpx text-[#999]">
+          消息内容
+        </view>
+        <!-- TODO @AI：消息内容的展示，是不是抽成一个 components 组件，在 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-im/manager/message；因为去聊也要复用； -->
+        <!-- TODO @AI：参考 pc 尽量渲染出来；渲染不出来，应该提示去 pc 看呀； -->
         <image
           v-if="imageUrl"
           :src="imageUrl"
@@ -33,7 +37,9 @@
           mode="widthFix"
           @click="previewImage"
         />
-        <view v-else class="text-28rpx text-[#333] leading-44rpx">{{ contentSummary }}</view>
+        <view v-else class="text-28rpx text-[#333] leading-44rpx">
+          {{ contentSummary }}
+        </view>
       </view>
     </view>
   </view>
@@ -47,7 +53,7 @@ import { getManagerPrivateMessage } from '@/api/im/manager/message/private'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { getImageUrl, getMessageSummary } from '@/utils/im/message'
+import { getImageUrl, getMessageSummary } from '@/pages-im/utils/message'
 
 const props = defineProps<{
   id?: number | string
@@ -64,6 +70,7 @@ const toast = useToast()
 const formData = ref<ImManagerPrivateMessageVO>() // 详情数据
 
 /** 图片消息地址 */
+// TODO @AI：这种简单的图片，不用搞个方法把。。。
 const imageUrl = computed(() => formData.value ? getImageUrl(formData.value.content) : '')
 
 /** 内容摘要 */
@@ -75,6 +82,7 @@ function handleBack() {
 }
 
 /** 预览图片 */
+// TODO @AI：图片是不是可以使用 wd-image 这种组件？
 function previewImage() {
   if (imageUrl.value) {
     uni.previewImage({ urls: [imageUrl.value] })

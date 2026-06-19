@@ -38,8 +38,12 @@
               mode="aspectFit"
             />
             <view class="min-w-0 flex-1">
-              <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">{{ item.name || '未命名' }}</view>
-              <view class="mt-8rpx text-26rpx text-[#999]">{{ item.userNickname || `用户 ${item.userId}` }}</view>
+              <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">
+                {{ item.name || '未命名' }}
+              </view>
+              <view class="mt-8rpx text-26rpx text-[#999]">
+                {{ item.userNickname || `用户 ${item.userId}` }}
+              </view>
               <view class="mt-6rpx flex items-center justify-between text-24rpx text-[#999]">
                 <text>{{ item.width && item.height ? `${item.width} × ${item.height}` : '-' }}</text>
                 <text>{{ formatDateTime(item.createTime) }}</text>

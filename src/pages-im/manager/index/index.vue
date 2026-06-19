@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO @AI：这个界面，是不是做到 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-statistics；可以使用图呀； -->
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
@@ -12,18 +13,28 @@
         <!-- 统计概览 -->
         <view class="grid grid-cols-2 gap-20rpx">
           <view v-for="item in overviewItems" :key="item.label" class="rounded-12rpx bg-white p-24rpx shadow-sm">
-            <view class="text-24rpx text-[#888]">{{ item.label }}</view>
-            <view class="mt-8rpx text-40rpx text-[#333] font-semibold">{{ item.value }}</view>
+            <view class="text-24rpx text-[#888]">
+              {{ item.label }}
+            </view>
+            <view class="mt-8rpx text-40rpx text-[#333] font-semibold">
+              {{ item.value }}
+            </view>
           </view>
         </view>
 
         <!-- 消息趋势 -->
         <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
           <view class="mb-20rpx flex items-center justify-between">
-            <view class="text-30rpx text-[#333] font-semibold">最近 7 天消息趋势</view>
-            <view class="text-22rpx text-[#999]">私聊 / 群聊</view>
+            <view class="text-30rpx text-[#333] font-semibold">
+              最近 7 天消息趋势
+            </view>
+            <view class="text-22rpx text-[#999]">
+              私聊 / 群聊
+            </view>
           </view>
-          <view v-if="messageTrendRows.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">暂无数据</view>
+          <view v-if="messageTrendRows.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">
+            暂无数据
+          </view>
           <view
             v-for="item in messageTrendRows"
             :key="item.date"
@@ -40,10 +51,16 @@
         <!-- 用户趋势 -->
         <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
           <view class="mb-20rpx flex items-center justify-between">
-            <view class="text-30rpx text-[#333] font-semibold">最近 7 天用户趋势</view>
-            <view class="text-22rpx text-[#999]">新增 / 日活</view>
+            <view class="text-30rpx text-[#333] font-semibold">
+              最近 7 天用户趋势
+            </view>
+            <view class="text-22rpx text-[#999]">
+              新增 / 日活
+            </view>
           </view>
-          <view v-if="userTrendRows.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">暂无数据</view>
+          <view v-if="userTrendRows.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">
+            暂无数据
+          </view>
           <view
             v-for="item in userTrendRows"
             :key="item.date"
@@ -59,8 +76,12 @@
 
         <!-- 消息类型分布 -->
         <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">最近 30 天消息类型</view>
-          <view v-if="messageTypeList.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">暂无数据</view>
+          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">
+            最近 30 天消息类型
+          </view>
+          <view v-if="messageTypeList.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">
+            暂无数据
+          </view>
           <view
             v-for="item in messageTypeList"
             :key="item.type"
@@ -73,8 +94,12 @@
 
         <!-- 群规模分布 -->
         <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">群规模分布</view>
-          <view v-if="groupSizeList.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">暂无数据</view>
+          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">
+            群规模分布
+          </view>
+          <view v-if="groupSizeList.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">
+            暂无数据
+          </view>
           <view
             v-for="item in groupSizeList"
             :key="item.range"
@@ -92,8 +117,12 @@
 
         <!-- TOP 发送者 -->
         <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">消息 TOP 发送者</view>
-          <view v-if="topSenders.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">暂无数据</view>
+          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">
+            消息 TOP 发送者
+          </view>
+          <view v-if="topSenders.length === 0" class="py-20rpx text-center text-26rpx text-[#999]">
+            暂无数据
+          </view>
           <view
             v-for="(item, index) in topSenders.slice(0, 5)"
             :key="item.userId"
@@ -103,7 +132,9 @@
               <view class="h-44rpx w-44rpx flex items-center justify-center rounded-full bg-[#f0f5ff] text-24rpx text-[#1677ff]">
                 {{ index + 1 }}
               </view>
-              <view class="truncate text-28rpx text-[#333]">{{ item.nickname || `用户 ${item.userId}` }}</view>
+              <view class="truncate text-28rpx text-[#333]">
+                {{ item.nickname || `用户 ${item.userId}` }}
+              </view>
             </view>
             <text class="text-28rpx text-[#666]">{{ item.messageCount }}</text>
           </view>

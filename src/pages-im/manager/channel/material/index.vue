@@ -45,8 +45,12 @@
                 <text class="line-clamp-1 flex-1 text-30rpx text-[#333] font-semibold">{{ item.title || '-' }}</text>
                 <dict-tag :type="DICT_TYPE.IM_CHANNEL_MATERIAL_TYPE" :value="item.type" />
               </view>
-              <view class="mt-10rpx text-26rpx text-[#999]">频道：{{ item.channelName || '-' }}</view>
-              <view v-if="item.summary" class="mt-6rpx line-clamp-2 text-26rpx text-[#999]">{{ item.summary }}</view>
+              <view class="mt-10rpx text-26rpx text-[#999]">
+                频道：{{ item.channelName || '-' }}
+              </view>
+              <view v-if="item.summary" class="line-clamp-2 mt-6rpx text-26rpx text-[#999]">
+                {{ item.summary }}
+              </view>
             </view>
           </view>
         </view>

@@ -45,7 +45,9 @@
                 <text class="line-clamp-1 flex-1 text-32rpx text-[#333] font-semibold">{{ item.name || '-' }}</text>
                 <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
               </view>
-              <view class="mt-10rpx text-26rpx text-[#999]">排序 {{ item.sort ?? 0 }}</view>
+              <view class="mt-10rpx text-26rpx text-[#999]">
+                排序 {{ item.sort ?? 0 }}
+              </view>
             </view>
           </view>
         </view>

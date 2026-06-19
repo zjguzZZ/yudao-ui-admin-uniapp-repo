@@ -21,9 +21,9 @@
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          申请人编号
+          申请人
         </view>
-        <wd-input v-model="formData.userId" type="number" placeholder="请输入申请人编号" clearable />
+        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择申请人" />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -92,6 +92,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import UserPicker from '@/components/system-select/user-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -103,9 +104,10 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const userPickerRef = ref<any>() // 申请人选择器引用
 const formData = reactive({
   groupId: undefined as string | undefined,
-  userId: undefined as string | undefined,
+  userId: undefined as number | undefined,
   handleResult: -1, // -1 表示全部
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -120,7 +122,7 @@ const placeholder = computed(() => {
     conditions.push(`群:${formData.groupId}`)
   }
   if (formData.userId) {
-    conditions.push(`申请人:${formData.userId}`)
+    conditions.push(`申请人:${userPickerRef.value?.getUserNickname(formData.userId) || formData.userId}`)
   }
   if (formData.handleResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.IM_GROUP_REQUEST_HANDLE_RESULT, formData.handleResult)}`)

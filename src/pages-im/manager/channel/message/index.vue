@@ -11,6 +11,7 @@
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 消息列表 -->
+    <!-- TODO @AI：频道消息，是不是也要有个详情；至少推送给谁之类的，还是需要的呀！ -->
     <z-paging
       ref="pagingRef"
       v-model="list"
@@ -41,8 +42,12 @@
               无封面
             </view>
             <view class="min-w-0 flex-1">
-              <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">{{ item.materialTitle || '-' }}</view>
-              <view class="mt-10rpx text-26rpx text-[#999]">频道：{{ item.channelName || '-' }}</view>
+              <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">
+                {{ item.materialTitle || '-' }}
+              </view>
+              <view class="mt-10rpx text-26rpx text-[#999]">
+                频道：{{ item.channelName || '-' }}
+              </view>
               <view class="mt-6rpx flex items-center justify-between text-24rpx text-[#999]">
                 <text>接收：{{ getReceiverText(item) }}</text>
                 <text>{{ formatDateTime(item.sendTime) }}</text>

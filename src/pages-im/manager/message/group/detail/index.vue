@@ -30,7 +30,9 @@
 
       <!-- 消息内容 -->
       <view class="mt-20rpx bg-white p-24rpx">
-        <view class="mb-16rpx text-28rpx text-[#999]">消息内容</view>
+        <view class="mb-16rpx text-28rpx text-[#999]">
+          消息内容
+        </view>
         <image
           v-if="imageUrl"
           :src="imageUrl"
@@ -38,7 +40,9 @@
           mode="widthFix"
           @click="previewImage"
         />
-        <view v-else class="text-28rpx text-[#333] leading-44rpx">{{ contentSummary }}</view>
+        <view v-else class="text-28rpx text-[#333] leading-44rpx">
+          {{ contentSummary }}
+        </view>
       </view>
     </view>
   </view>
@@ -52,7 +56,7 @@ import { getManagerGroupMessage } from '@/api/im/manager/message/group'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { getImageUrl, getMessageSummary } from '@/utils/im/message'
+import { getImageUrl, getMessageSummary } from '@/pages-im/utils/message'
 
 const props = defineProps<{
   id?: number | string

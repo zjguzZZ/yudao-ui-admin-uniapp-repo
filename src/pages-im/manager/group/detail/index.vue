@@ -57,8 +57,12 @@
             {{ (member.nickname || '?').slice(0, 1) }}
           </view>
           <view class="min-w-0 flex-1">
-            <view class="line-clamp-1 text-28rpx text-[#333]">{{ member.nickname || `用户 ${member.userId}` }}</view>
-            <view v-if="member.groupRemark" class="mt-2rpx text-22rpx text-[#999]">群备注：{{ member.groupRemark }}</view>
+            <view class="line-clamp-1 text-28rpx text-[#333]">
+              {{ member.nickname || `用户 ${member.userId}` }}
+            </view>
+            <view v-if="member.groupRemark" class="mt-2rpx text-22rpx text-[#999]">
+              群备注：{{ member.groupRemark }}
+            </view>
           </view>
           <dict-tag v-if="member.role != null" :type="DICT_TYPE.IM_GROUP_MEMBER_ROLE" :value="member.role" />
         </view>

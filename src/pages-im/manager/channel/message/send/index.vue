@@ -43,8 +43,12 @@
           />
           <wd-form-item title="受众" title-width="180rpx" prop="receiverUserType" center>
             <wd-radio-group v-model="formData.receiverUserType" type="button">
-              <wd-radio value="all">全员</wd-radio>
-              <wd-radio value="users">指定用户</wd-radio>
+              <wd-radio value="all">
+                全员
+              </wd-radio>
+              <wd-radio value="users">
+                指定用户
+              </wd-radio>
             </wd-radio-group>
           </wd-form-item>
           <UserPicker

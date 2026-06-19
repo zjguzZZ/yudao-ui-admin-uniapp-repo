@@ -37,14 +37,16 @@
             </view>
             <dict-tag :type="DICT_TYPE.IM_FRIEND_REQUEST_HANDLE_RESULT" :value="item.handleResult" />
           </view>
-          <view v-if="item.applyContent" class="mt-10rpx line-clamp-2 text-26rpx text-[#666]">
+          <view v-if="item.applyContent" class="line-clamp-2 mt-10rpx text-26rpx text-[#666]">
             申请理由：{{ item.applyContent }}
           </view>
           <view class="mt-8rpx text-24rpx text-[#999]">
             <text v-if="item.addSource != null">来源：{{ getDictLabel(DICT_TYPE.IM_FRIEND_ADD_SOURCE, item.addSource) }}</text>
             <text v-if="item.displayName" class="ml-16rpx">备注：{{ item.displayName }}</text>
           </view>
-          <view v-if="item.handleContent" class="mt-8rpx text-24rpx text-[#999]">处理理由：{{ item.handleContent }}</view>
+          <view v-if="item.handleContent" class="mt-8rpx text-24rpx text-[#999]">
+            处理理由：{{ item.handleContent }}
+          </view>
           <view class="mt-12rpx flex items-center justify-between text-24rpx text-[#999]">
             <text>申请 {{ formatDateTime(item.createTime) }}</text>
             <text v-if="item.handleTime">处理 {{ formatDateTime(item.handleTime) }}</text>

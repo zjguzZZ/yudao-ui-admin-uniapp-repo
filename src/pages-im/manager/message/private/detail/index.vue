@@ -13,11 +13,11 @@
         <wd-cell title="发送人" :value="formData?.senderNickname || (formData ? `用户 ${formData.senderId}` : '-')" />
         <wd-cell title="接收人" :value="formData?.receiverNickname || (formData ? `用户 ${formData.receiverId}` : '-')" />
         <wd-cell title="消息类型">
-          <dict-tag v-if="formData?.type != null" :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="formData.type" />
+          <dict-tag v-if="formData?.type != null" :type="DICT_TYPE.IM_CONTENT_TYPE" :value="formData.type" />
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="状态">
-          <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.IM_PRIVATE_MESSAGE_STATUS" :value="formData.status" />
+          <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.IM_MESSAGE_STATUS" :value="formData.status" />
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="发送时间" :value="formatDateTime(formData?.sendTime) || '-'" />

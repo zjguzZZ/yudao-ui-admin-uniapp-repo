@@ -34,7 +34,7 @@
             <view class="line-clamp-1 flex-1 text-30rpx text-[#333] font-semibold">
               {{ item.groupName || `群 ${item.groupId}` }}
             </view>
-            <dict-tag :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="item.type" />
+            <dict-tag :type="DICT_TYPE.IM_CONTENT_TYPE" :value="item.type" />
           </view>
           <view class="mt-8rpx text-26rpx text-[#999]">
             发送人：{{ item.senderNickname || `用户 ${item.senderId}` }}
@@ -44,7 +44,7 @@
           </view>
           <view class="mt-12rpx flex items-center justify-between text-24rpx text-[#999]">
             <text>{{ formatDateTime(item.sendTime) }}</text>
-            <text>{{ getDictLabel(DICT_TYPE.IM_GROUP_MESSAGE_STATUS, item.status) }}</text>
+            <text>{{ getDictLabel(DICT_TYPE.IM_MESSAGE_STATUS, item.status) }}</text>
           </view>
         </view>
       </view>

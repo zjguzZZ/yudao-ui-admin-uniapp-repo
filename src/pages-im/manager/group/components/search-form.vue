@@ -50,10 +50,10 @@
           <wd-radio :value="-1">
             全部
           </wd-radio>
-          <wd-radio :value="1">
+          <wd-radio :value="true">
             已封禁
           </wd-radio>
-          <wd-radio :value="0">
+          <wd-radio :value="false">
             未封禁
           </wd-radio>
         </wd-radio-group>
@@ -125,7 +125,7 @@ const formData = reactive({
   name: undefined as string | undefined,
   ownerUserId: undefined as number | undefined,
   status: -1, // -1 表示全部
-  banned: -1, // -1 全部，1 已封禁，0 未封禁
+  banned: -1 as -1 | boolean, // -1 全部，true 已封禁，false 未封禁
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -145,7 +145,7 @@ const placeholder = computed(() => {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_GROUP_STATUS, formData.status)}`)
   }
   if (formData.banned !== -1) {
-    conditions.push(`封禁:${formData.banned === 1 ? '已封禁' : '未封禁'}`)
+    conditions.push(`封禁:${formData.banned === true ? '已封禁' : '未封禁'}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`创建时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -172,7 +172,7 @@ function handleSearch() {
     name: formData.name,
     ownerUserId: formData.ownerUserId,
     status: formData.status === -1 ? undefined : formData.status,
-    banned: formData.banned === -1 ? undefined : formData.banned === 1,
+    banned: formData.banned === -1 ? undefined : formData.banned,
     createTime: formatDateRange(formData.createTime),
   })
 }

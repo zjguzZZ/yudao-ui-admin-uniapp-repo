@@ -208,7 +208,7 @@ const menuGroupsData: MenuGroup[] = [
       {
         key: 'imGroupRequest',
         name: '群聊申请',
-        icon: 'subscribe-add',
+        icon: 'user-add',
         url: '/pages-im/manager/group/request/index',
         iconColor: '#13c2c2',
       },
@@ -250,7 +250,7 @@ const menuGroupsData: MenuGroup[] = [
       {
         key: 'imChannel',
         name: '频道列表',
-        icon: 'sound',
+        icon: 'send',
         url: '/pages-im/manager/channel/index',
         iconColor: '#2f54eb',
       },
@@ -264,7 +264,7 @@ const menuGroupsData: MenuGroup[] = [
       {
         key: 'imChannelMessage',
         name: '频道消息',
-        icon: 'send',
+        icon: 'email',
         url: '/pages-im/manager/channel/message/index',
         iconColor: '#faad14',
       },

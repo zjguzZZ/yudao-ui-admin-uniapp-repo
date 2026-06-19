@@ -50,10 +50,10 @@
           <wd-radio :value="-1">
             全部
           </wd-radio>
-          <wd-radio :value="1">
+          <wd-radio :value="true">
             是
           </wd-radio>
-          <wd-radio :value="0">
+          <wd-radio :value="false">
             否
           </wd-radio>
         </wd-radio-group>
@@ -126,7 +126,7 @@ const formData = reactive({
   userId: undefined as number | undefined,
   friendUserId: undefined as number | undefined,
   status: -1, // -1 表示全部
-  silent: -1, // -1 全部，1 免打扰，0 正常
+  silent: -1 as -1 | boolean, // -1 全部，true 免打扰，false 正常
   addTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -146,7 +146,7 @@ const placeholder = computed(() => {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_FRIEND_STATUS, formData.status)}`)
   }
   if (formData.silent !== -1) {
-    conditions.push(`免打扰:${formData.silent === 1 ? '是' : '否'}`)
+    conditions.push(`免打扰:${formData.silent === true ? '是' : '否'}`)
   }
   if (formData.addTime?.[0] && formData.addTime?.[1]) {
     conditions.push(`添加时间:${formatDate(formData.addTime[0])}~${formatDate(formData.addTime[1])}`)
@@ -173,7 +173,7 @@ function handleSearch() {
     userId: formData.userId,
     friendUserId: formData.friendUserId,
     status: formData.status === -1 ? undefined : formData.status,
-    silent: formData.silent === -1 ? undefined : formData.silent === 1,
+    silent: formData.silent === -1 ? undefined : formData.silent,
     addTime: formatDateRange(formData.addTime),
   })
 }

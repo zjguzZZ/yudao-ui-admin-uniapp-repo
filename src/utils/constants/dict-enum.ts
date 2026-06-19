@@ -170,10 +170,9 @@ const WMS_DICT = {
 
 /** ========== IM - 即时通讯模块 ========== */
 const IM_DICT = {
-  IM_MESSAGE_TYPE: 'im_message_type', // IM 消息类型
-  IM_PRIVATE_MESSAGE_STATUS: 'im_private_message_status', // IM 私聊消息状态
-  IM_GROUP_MESSAGE_STATUS: 'im_group_message_status', // IM 群聊消息状态
-  IM_GROUP_MESSAGE_RECEIPT_STATUS: 'im_group_message_receipt_status', // IM 群消息回执状态
+  IM_CONTENT_TYPE: 'im_content_type', // IM 消息内容类型
+  IM_MESSAGE_STATUS: 'im_message_status', // IM 消息状态（私聊 / 群聊共用）
+  IM_MESSAGE_RECEIPT_STATUS: 'im_message_receipt_status', // IM 消息回执状态（私聊 / 群聊共用）
   IM_FRIEND_STATUS: 'im_friend_status', // IM 好友状态
   IM_FRIEND_ADD_SOURCE: 'im_friend_add_source', // IM 好友添加来源
   IM_FRIEND_REQUEST_HANDLE_RESULT: 'im_friend_request_handle_result', // IM 好友申请处理结果

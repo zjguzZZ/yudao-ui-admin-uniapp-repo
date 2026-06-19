@@ -1,4 +1,3 @@
-// TODO @AI：应该收到 im 模块里；
 import { ImMessageType, isFriendChatTip, isGroupNotification, isRtcCallTip } from '@/utils/constants'
 
 /** 文本消息内容 */

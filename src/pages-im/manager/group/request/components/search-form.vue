@@ -27,6 +27,12 @@
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
+          邀请人
+        </view>
+        <UserPicker ref="inviterPickerRef" v-model="formData.inviterUserId" type="radio" placeholder="请选择邀请人" />
+      </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           处理结果
         </view>
         <wd-radio-group v-model="formData.handleResult" type="button">
@@ -35,6 +41,23 @@
           </wd-radio>
           <wd-radio
             v-for="dict in getIntDictOptions(DICT_TYPE.IM_GROUP_REQUEST_HANDLE_RESULT)"
+            :key="dict.value"
+            :value="dict.value"
+          >
+            {{ dict.label }}
+          </wd-radio>
+        </wd-radio-group>
+      </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          加入来源
+        </view>
+        <wd-radio-group v-model="formData.addSource" type="button">
+          <wd-radio :value="-1">
+            全部
+          </wd-radio>
+          <wd-radio
+            v-for="dict in getIntDictOptions(DICT_TYPE.IM_GROUP_ADD_SOURCE)"
             :key="dict.value"
             :value="dict.value"
           >
@@ -105,10 +128,13 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const userPickerRef = ref<any>() // 申请人选择器引用
+const inviterPickerRef = ref<any>() // 邀请人选择器引用
 const formData = reactive({
   groupId: undefined as string | undefined,
   userId: undefined as number | undefined,
+  inviterUserId: undefined as number | undefined,
   handleResult: -1, // -1 表示全部
+  addSource: -1, // -1 表示全部
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -124,8 +150,14 @@ const placeholder = computed(() => {
   if (formData.userId) {
     conditions.push(`申请人:${userPickerRef.value?.getUserNickname(formData.userId) || formData.userId}`)
   }
+  if (formData.inviterUserId) {
+    conditions.push(`邀请人:${inviterPickerRef.value?.getUserNickname(formData.inviterUserId) || formData.inviterUserId}`)
+  }
   if (formData.handleResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.IM_GROUP_REQUEST_HANDLE_RESULT, formData.handleResult)}`)
+  }
+  if (formData.addSource !== -1) {
+    conditions.push(`来源:${getDictLabel(DICT_TYPE.IM_GROUP_ADD_SOURCE, formData.addSource)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`申请时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -149,8 +181,11 @@ function handleCreateTime1Confirm() {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    ...formData,
+    groupId: formData.groupId,
+    userId: formData.userId,
+    inviterUserId: formData.inviterUserId,
     handleResult: formData.handleResult === -1 ? undefined : formData.handleResult,
+    addSource: formData.addSource === -1 ? undefined : formData.addSource,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -159,7 +194,9 @@ function handleSearch() {
 function handleReset() {
   formData.groupId = undefined
   formData.userId = undefined
+  formData.inviterUserId = undefined
   formData.handleResult = -1
+  formData.addSource = -1
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

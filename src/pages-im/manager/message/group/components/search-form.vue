@@ -118,7 +118,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const typeVisible = ref(false) // 消息类型选择器显示状态
 const senderPickerRef = ref<any>() // 发送人选择器引用
-const typeColumns = [{ label: '全部', value: -1 }, ...getIntDictOptions(DICT_TYPE.IM_MESSAGE_TYPE)] // 消息类型选项（-1 全部）
+const typeColumns = [{ label: '全部', value: -1 }, ...getIntDictOptions(DICT_TYPE.IM_CONTENT_TYPE)] // 消息类型选项（-1 全部）
 const formData = reactive({
   groupId: undefined as string | undefined,
   senderId: undefined as number | undefined,

@@ -87,7 +87,7 @@
             :key="item.type"
             class="flex items-center justify-between border-t border-t-[#f2f3f5] py-18rpx first:border-t-0"
           >
-            <dict-tag :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="item.type" />
+            <dict-tag :type="DICT_TYPE.IM_CONTENT_TYPE" :value="item.type" />
             <text class="text-30rpx text-[#333] font-semibold">{{ item.value }}</text>
           </view>
         </view>

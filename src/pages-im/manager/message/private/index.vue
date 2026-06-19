@@ -36,14 +36,14 @@
               <text class="mx-8rpx text-[#bbb]">→</text>
               {{ item.receiverNickname || `用户 ${item.receiverId}` }}
             </view>
-            <dict-tag :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="item.type" />
+            <dict-tag :type="DICT_TYPE.IM_CONTENT_TYPE" :value="item.type" />
           </view>
           <view class="line-clamp-2 mt-10rpx text-26rpx text-[#666]">
             {{ getMessageSummary(item.type, item.content) }}
           </view>
           <view class="mt-12rpx flex items-center justify-between text-24rpx text-[#999]">
             <text>{{ formatDateTime(item.sendTime) }}</text>
-            <text>{{ getDictLabel(DICT_TYPE.IM_PRIVATE_MESSAGE_STATUS, item.status) }}</text>
+            <text>{{ getDictLabel(DICT_TYPE.IM_MESSAGE_STATUS, item.status) }}</text>
           </view>
         </view>
       </view>

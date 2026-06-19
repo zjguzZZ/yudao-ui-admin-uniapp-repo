@@ -13,16 +13,16 @@
         <wd-cell title="所属群" :value="formData?.groupName || (formData ? `群 ${formData.groupId}` : '-')" />
         <wd-cell title="发送人" :value="formData?.senderNickname || (formData ? `用户 ${formData.senderId}` : '-')" />
         <wd-cell title="消息类型">
-          <dict-tag v-if="formData?.type != null" :type="DICT_TYPE.IM_MESSAGE_TYPE" :value="formData.type" />
+          <dict-tag v-if="formData?.type != null" :type="DICT_TYPE.IM_CONTENT_TYPE" :value="formData.type" />
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="@用户" :value="atUserText" />
         <wd-cell title="回执状态">
-          <dict-tag v-if="formData?.receiptStatus != null" :type="DICT_TYPE.IM_GROUP_MESSAGE_RECEIPT_STATUS" :value="formData.receiptStatus" />
+          <dict-tag v-if="formData?.receiptStatus != null" :type="DICT_TYPE.IM_MESSAGE_RECEIPT_STATUS" :value="formData.receiptStatus" />
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="状态">
-          <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.IM_GROUP_MESSAGE_STATUS" :value="formData.status" />
+          <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.IM_MESSAGE_STATUS" :value="formData.status" />
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="发送时间" :value="formatDateTime(formData?.sendTime) || '-'" />

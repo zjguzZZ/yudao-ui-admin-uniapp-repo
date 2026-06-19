@@ -114,7 +114,7 @@ const formSchema = createFormSchema(() => ({
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-im/manager/list/index?kind=channelMessage')
+  navigateBackPlus('/pages-im/manager/channel-message/index')
 }
 
 /** 加载频道选项 */
@@ -173,6 +173,7 @@ async function handleSubmit() {
         : undefined,
     })
     toast.success('推送成功')
+    uni.$emit('im:manager:channel-message:reload')
     setTimeout(handleBack, 500)
   } finally {
     formLoading.value = false

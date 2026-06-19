@@ -142,7 +142,7 @@ const getTitle = computed(() => props.id ? '编辑表情' : '新增表情')
 /** 返回上一页 */
 function handleBack() {
   const packParam = formData.value.packId || props.packId
-  navigateBackPlus(`/pages-im/manager/list/index?kind=faceItem${packParam ? `&packId=${packParam}` : ''}`)
+  navigateBackPlus(`/pages-im/manager/face-item/index${packParam ? `?packId=${packParam}` : ''}`)
 }
 
 /** 校验尺寸 */
@@ -206,6 +206,7 @@ async function handleSubmit() {
       await createManagerFacePackItem(data)
       toast.success('新增成功')
     }
+    uni.$emit('im:manager:face-pack-item:reload')
     setTimeout(handleBack, 500)
   } finally {
     formLoading.value = false

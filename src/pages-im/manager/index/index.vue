@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="IM 管理"
+      title="统计看板"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -14,24 +14,6 @@
           <view v-for="item in overviewItems" :key="item.label" class="rounded-12rpx bg-white p-24rpx shadow-sm">
             <view class="text-24rpx text-[#888]">{{ item.label }}</view>
             <view class="mt-8rpx text-40rpx text-[#333] font-semibold">{{ item.value }}</view>
-          </view>
-        </view>
-
-        <!-- 管理模块 -->
-        <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-          <view class="mb-20rpx text-30rpx text-[#333] font-semibold">管理模块</view>
-          <view class="grid grid-cols-3 gap-20rpx">
-            <view
-              v-for="item in managerModules"
-              :key="item.kind"
-              class="manager-module"
-              @click="handleOpenModule(item)"
-            >
-              <view class="h-72rpx w-72rpx flex items-center justify-center rounded-16rpx" :style="{ backgroundColor: `${item.color}20` }">
-                <wd-icon :name="item.icon" size="40rpx" :color="item.color" />
-              </view>
-              <text>{{ item.name }}</text>
-            </view>
           </view>
         </view>
 
@@ -152,13 +134,6 @@ import {
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
-interface ManagerModule {
-  color: string
-  icon: string
-  kind: string
-  name: string
-}
-
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -172,21 +147,6 @@ const topSenders = ref<ImStatisticsTopSenderVO[]>([]) // 消息发送排行
 const messageTrend = ref<ImStatisticsTrendVO>() // 消息趋势
 const userTrend = ref<ImStatisticsTrendVO>() // 用户趋势
 const groupSizeList = ref<ImStatisticsGroupSizeVO[]>([]) // 群规模分布
-const managerModules: ManagerModule[] = [
-  { kind: 'friend', name: '好友关系', icon: 'user', color: '#1677ff' },
-  { kind: 'friendRequest', name: '好友申请', icon: 'notification', color: '#fa8c16' },
-  { kind: 'group', name: '群组', icon: 'usergroup', color: '#52c41a' },
-  { kind: 'groupRequest', name: '加群申请', icon: 'add-circle', color: '#13c2c2' },
-  { kind: 'privateMessage', name: '私聊消息', icon: 'message', color: '#722ed1' },
-  { kind: 'groupMessage', name: '群聊消息', icon: 'chat', color: '#eb2f96' },
-  { kind: 'channel', name: '频道', icon: 'sound', color: '#2f54eb' },
-  { kind: 'channelMaterial', name: '频道素材', icon: 'picture', color: '#fa541c' },
-  { kind: 'channelMessage', name: '频道消息', icon: 'send', color: '#faad14' },
-  { kind: 'sensitiveWord', name: '敏感词', icon: 'warning', color: '#f5222d' },
-  { kind: 'facePack', name: '表情包', icon: 'image', color: '#9254de' },
-  { kind: 'faceUserItem', name: '用户表情', icon: 'image-error', color: '#36cfc9' },
-  { kind: 'rtc', name: '通话记录', icon: 'phone', color: '#08979c' },
-]
 
 /** 概览卡片 */
 const overviewItems = computed(() => [
@@ -209,14 +169,7 @@ const groupSizeMax = computed(() => Math.max(...groupSizeList.value.map(item => 
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-im/index/index')
-}
-
-/** 打开管理模块 */
-function handleOpenModule(item: ManagerModule) {
-  uni.navigateTo({
-    url: `/pages-im/manager/list/index?kind=${item.kind}`,
-  })
+  navigateBackPlus()
 }
 
 /** 构建趋势行 */
@@ -256,19 +209,3 @@ onShow(() => {
   loadData()
 })
 </script>
-
-<style lang="scss" scoped>
-.manager-module {
-  display: flex;
-  min-height: 132rpx;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 12rpx;
-  border-radius: 12rpx;
-  background: #f7f8fa;
-  color: #333;
-  font-size: 24rpx;
-  text-align: center;
-}
-</style>

@@ -100,7 +100,7 @@ const getTitle = computed(() => props.id ? '编辑表情包' : '新增表情包'
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-im/manager/list/index?kind=facePack')
+  navigateBackPlus('/pages-im/manager/face-pack/index')
 }
 
 /** 加载详情 */
@@ -127,6 +127,7 @@ async function handleSubmit() {
       await createManagerFacePack(data)
       toast.success('新增成功')
     }
+    uni.$emit('im:manager:face-pack:reload')
     setTimeout(handleBack, 500)
   } finally {
     formLoading.value = false

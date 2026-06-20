@@ -28,7 +28,9 @@
         <wd-cell title="最后跟进时间" :value="formatDateTime(formData.contactLastTime) || '-'" />
         <wd-cell title="最后跟进内容" :value="formData.contactLastContent || '-'" />
         <wd-cell title="备注" :value="formData.remark || '-'" />
+        <wd-cell title="创建人" :value="formData.creatorName || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
+        <wd-cell title="更新时间" :value="formatDateTime(formData.updateTime) || '-'" />
       </wd-cell-group>
 
       <!-- 产品清单（只读） -->
@@ -68,7 +70,7 @@
     </template>
 
     <!-- 跟进记录 -->
-    <CrmFollowupRecords v-else-if="activeTab === 'followup' && businessId" ref="followupRef" embedded :biz-id="businessId" :biz-type="bizType" />
+    <CrmFollowupRecords v-else-if="activeTab === 'followup' && businessId" ref="followupRef" class="min-h-0 flex-1" embedded :biz-id="businessId" :biz-type="bizType" />
 
     <!-- 联系人 -->
     <ContactList v-else-if="activeTab === 'contacts' && businessId" ref="listRef" class="min-h-0 flex-1" :business-id="businessId" :customer-id="formData.customerId" />
@@ -77,7 +79,7 @@
     <ContractList v-else-if="activeTab === 'contracts' && businessId" ref="listRef" class="min-h-0 flex-1" :business-id="businessId" />
 
     <!-- 操作日志 -->
-    <CrmOperateLogs v-else-if="activeTab === 'log' && businessId" :biz-id="businessId" :biz-type="bizType" />
+    <CrmOperateLogs v-else-if="activeTab === 'log' && businessId" class="min-h-0 flex-1" :biz-id="businessId" :biz-type="bizType" />
 
     <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
     <CrmPermissionTeam
@@ -115,7 +117,7 @@
           <wd-button v-if="teamCanQuit" class="flex-1" type="danger" variant="plain" @click="teamRef?.quit()">
             退出团队
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="teamRef?.openAdd()">
+          <wd-button v-if="validateOwnerUser" class="flex-1" type="primary" @click="teamRef?.openAdd()">
             新增成员
           </wd-button>
         </template>
@@ -188,7 +190,7 @@ const businessStatusFormRef = ref<InstanceType<typeof CrmBusinessStatusForm>>() 
 const businessId = computed(() => Number(props.id))
 const totalProductPrice = computed(() => (Array.isArray(formData.value.products) ? formData.value.products : []).reduce((sum, row) => sum + Number(row.totalPrice || 0), 0)) // 产品总金额
 const activeTab = computed(() => tabs[tabIndex.value].key)
-const isPagingTab = computed(() => ['contacts', 'contracts'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
+const isPagingTab = computed(() => ['contacts', 'contracts', 'followup', 'log'].includes(activeTab.value)) // 关系列表/跟进 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:business:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:business:delete']))
 const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
@@ -217,7 +219,7 @@ const hasFooter = computed(() => {
     case 'followup':
       return true
     case 'team':
-      return true
+      return teamCanQuit.value || validateOwnerUser.value
     case 'contacts':
       return hasAccessByCodes(['crm:contact:create'])
     case 'contracts':

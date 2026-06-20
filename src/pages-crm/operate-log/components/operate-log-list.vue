@@ -1,34 +1,43 @@
 <template>
-  <view>
-    <view class="p-24rpx pb-32rpx">
-      <view
-        v-for="item in list"
-        :key="item.id"
-        class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-      >
-        <view class="mb-12rpx flex items-center justify-between gap-16rpx">
-          <text class="min-w-0 flex-1 text-28rpx text-[#333] font-semibold">
-            {{ item.action || '-' }}
-          </text>
-          <text class="shrink-0 text-26rpx text-[#999]">
-            {{ formatDateTime(item.createTime) || '-' }}
-          </text>
-        </view>
-        <view class="text-26rpx text-[#666]">
-          操作人：{{ item.userName || '-' }}
+  <view class="min-h-0 flex flex-1 flex-col">
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="20"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      empty-view-text="暂无操作日志"
+      @query="queryList"
+    >
+      <view class="p-24rpx pb-32rpx">
+        <view
+          v-for="item in list"
+          :key="item.id"
+          class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+        >
+          <view class="mb-12rpx flex items-center justify-between gap-16rpx">
+            <text class="min-w-0 flex-1 text-28rpx text-[#333] font-semibold">
+              {{ item.action || '-' }}
+            </text>
+            <text class="shrink-0 text-26rpx text-[#999]">
+              {{ formatDateTime(item.createTime) || '-' }}
+            </text>
+          </view>
+          <view class="text-26rpx text-[#666]">
+            操作人：{{ item.userName || '-' }}
+          </view>
         </view>
       </view>
-      <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无操作日志" />
-      <view v-if="loading" class="p-24rpx text-center text-28rpx text-[#999]">
-        加载中...
-      </view>
-    </view>
+    </z-paging>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { OperateLog } from '@/api/crm/operateLog'
-import { onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { formatDateTime } from '@/utils/date'
 
@@ -37,38 +46,27 @@ const props = defineProps<{
   bizType: number
 }>()
 
-const loading = ref(false) // 日志加载状态
 const list = ref<OperateLog[]>([]) // 操作日志
+const pagingRef = ref<any>() // 分页组件引用
 
-/** 加载操作日志 */
-// TODO @AI：要不要分页？目前只加载前 20 条，后续如果有需求再加分页吧
-async function getList() {
+/** 查询操作日志 */
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.bizId || !props.bizType) {
+    pagingRef.value?.complete([])
     return
   }
-  loading.value = true
   try {
     const data = await getOperateLogPage({
-      pageNo: 1,
-      pageSize: 20,
+      pageNo,
+      pageSize,
       bizId: props.bizId,
       bizType: props.bizType,
     })
-    list.value = data.list
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
-watch(
-  () => [props.bizType, props.bizId],
-  () => {
-    getList()
-  },
-)
-
-/** 初始化 */
-onMounted(() => {
-  getList()
-})
+watch(() => [props.bizType, props.bizId], () => pagingRef.value?.reload())
 </script>

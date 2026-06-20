@@ -23,28 +23,14 @@
           clearable
         />
       </view>
-      <view v-if="processDefinitionList.length > 0" class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          所属流程
-        </view>
-        <view
-          class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-          @click="pickerVisible.processDefinitionId = true"
-        >
-          <text class="text-28rpx text-[#333]">
-            {{ getWotPickerDisplay(processDefinitionList, formData.processDefinitionId, { valueKey: 'id', labelKey: 'name', placeholder: '请选择' }) }}
-          </text>
-          <wd-icon name="arrow-down" size="32rpx" color="#666" />
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.processDefinitionId"
-          :model-value="formData.processDefinitionId"
-          :columns="processDefinitionList"
-          label-key="name"
-          value-key="id"
-          @confirm="({ value }) => formData.processDefinitionId = value[0]"
-        />
-      </view>
+      <yd-search-picker
+        v-if="processDefinitionList.length > 0"
+        v-model="formData.processDefinitionId"
+        label="所属流程"
+        :columns="processDefinitionList"
+        value-key="id"
+        label-key="name"
+      />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           发起时间
@@ -94,28 +80,14 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view v-if="categoryList.length > 0" class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          流程分类
-        </view>
-        <view
-          class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-          @click="pickerVisible.categoryId = true"
-        >
-          <text class="text-28rpx text-[#333]">
-            {{ getWotPickerDisplay(categoryList, formData.categoryId, { valueKey: 'code', labelKey: 'name', placeholder: '请选择' }) }}
-          </text>
-          <wd-icon name="arrow-down" size="32rpx" color="#666" />
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.categoryId"
-          :model-value="formData.categoryId"
-          :columns="categoryList"
-          label-key="name"
-          value-key="code"
-          @confirm="({ value }) => formData.categoryId = value[0]"
-        />
-      </view>
+      <yd-search-picker
+        v-if="categoryList.length > 0"
+        v-model="formData.categoryId"
+        label="流程分类"
+        :columns="categoryList"
+        value-key="code"
+        label-key="name"
+      />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -138,7 +110,6 @@ import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -153,7 +124,6 @@ const formData = reactive({
   categoryId: undefined as string | undefined,
 }) // 搜索表单数据
 const visible = ref(false) // 搜索弹窗显示状态
-const pickerVisible = ref<Record<string, boolean>>({}) // 下拉选择器显示状态
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {

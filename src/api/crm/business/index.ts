@@ -56,6 +56,11 @@ export function getBusinessPageByCustomer(params: PageParam) {
   return http.get<PageResult<Business>>('/crm/business/page-by-customer', params)
 }
 
+/** 查询指定客户下的商机列表（不分页） */
+export function getBusinessListByCustomer(customerId: number) {
+  return http.get<Business[]>(`/crm/business/list-by-customer?customerId=${customerId}`)
+}
+
 /** 查询商机详情 */
 export function getBusiness(id: number) {
   return http.get<Business>(`/crm/business/get?id=${id}`)

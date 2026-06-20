@@ -25,28 +25,7 @@
         </view>
         <UserPicker ref="receiverPickerRef" v-model="formData.receiverId" type="radio" placeholder="请选择接收人" />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          消息类型
-        </view>
-        <view
-          class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-          @click="typeVisible = true"
-        >
-          <text class="text-28rpx text-[#333]">
-            {{ getWotPickerDisplay(typeColumns, formData.type, { valueKey: 'value', labelKey: 'label', placeholder: '全部' }) }}
-          </text>
-          <wd-icon name="arrow-down" size="32rpx" color="#666" />
-        </view>
-        <wd-picker
-          v-model:visible="typeVisible"
-          :model-value="formData.type"
-          :columns="typeColumns"
-          label-key="label"
-          value-key="value"
-          @confirm="({ value }) => formData.type = Number(value[0])"
-        />
-      </view>
+      <yd-search-picker v-model="formData.type" label="消息类型" :dict-type="DICT_TYPE.IM_CONTENT_TYPE" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           消息内容
@@ -116,7 +95,6 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const typeVisible = ref(false) // 消息类型选择器显示状态
 const senderPickerRef = ref<any>() // 发送人选择器引用
 const receiverPickerRef = ref<any>() // 接收人选择器引用
 const typeColumns = [{ label: '全部', value: -1 }, ...getIntDictOptions(DICT_TYPE.IM_CONTENT_TYPE)] // 消息类型选项（-1 全部）

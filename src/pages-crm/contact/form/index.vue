@@ -37,8 +37,7 @@
           <wd-form-item title="关键决策人" title-width="200rpx" prop="master">
             <wd-switch v-model="formData.master" />
           </wd-form-item>
-          <wd-form-item title="性别" title-width="200rpx" prop="sex" is-link placeholder="请选择性别" :value="getDictLabel(DICT_TYPE.SYSTEM_USER_SEX, formData.sex)" @click="pickerVisible.sex = true" />
-          <wd-picker v-model:visible="pickerVisible.sex" :model-value="formData.sex" :columns="getIntDictOptions(DICT_TYPE.SYSTEM_USER_SEX)" label-key="label" value-key="value" @confirm="({ value }) => formData.sex = value[0]" />
+          <yd-form-picker v-model="formData.sex" label="性别" prop="sex" :dict-type="DICT_TYPE.SYSTEM_USER_SEX" placeholder="请选择性别" />
           <CrmPicker v-model="formData.parentId" source="contact" label="直属上级" prop="parentId" placeholder="请选择直属上级" />
           <YdTreeSelect v-model="formData.areaId" :data="areaTree" label="地区" prop="areaId" label-width="200rpx" placeholder="请选择地区" />
           <wd-form-item title="详细地址" title-width="200rpx" prop="detailAddress">
@@ -71,7 +70,6 @@ import { createContact, getContact, updateContact } from '@/api/crm/contact'
 import { getAreaTree } from '@/api/system/area'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import YdTreeSelect from '@/components/yudao-ui/yd-tree-select/yd-tree-select.vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

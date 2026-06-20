@@ -47,10 +47,10 @@
     </wd-cell-group>
 
     <!-- 跟进记录 -->
-    <CrmFollowupRecords v-else-if="activeTab === 'followup' && customerId" ref="followupRef" embedded :biz-id="customerId" :biz-type="bizType" />
+    <CrmFollowupRecords v-else-if="activeTab === 'followup' && customerId" ref="followupRef" class="min-h-0 flex-1" embedded :biz-id="customerId" :biz-type="bizType" />
 
     <!-- 操作日志 -->
-    <CrmOperateLogs v-else-if="activeTab === 'log' && customerId" :biz-id="customerId" :biz-type="bizType" />
+    <CrmOperateLogs v-else-if="activeTab === 'log' && customerId" class="min-h-0 flex-1" :biz-id="customerId" :biz-type="bizType" />
 
     <!-- 关联数据：各模块自己的列表组件 -->
     <ContactList v-else-if="activeTab === 'contacts' && customerId" ref="listRef" class="min-h-0 flex-1" :customer-id="customerId" />
@@ -92,7 +92,7 @@
           <wd-button v-if="teamCanQuit" class="flex-1" type="danger" variant="plain" @click="teamRef?.quit()">
             退出团队
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="teamRef?.openAdd()">
+          <wd-button v-if="validateOwnerUser" class="flex-1" type="primary" @click="teamRef?.openAdd()">
             新增成员
           </wd-button>
         </template>
@@ -197,7 +197,7 @@ const distributeFormSchema = createFormSchema({ ownerUserId: [{ required: true, 
 const customerId = computed(() => Number(props.id))
 const activeTabConfig = computed(() => tabs[tabIndex.value])
 const activeTab = computed(() => activeTabConfig.value.key)
-const isPagingTab = computed(() => ['contacts', 'businesses', 'contracts', 'plans', 'receivables'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
+const isPagingTab = computed(() => ['contacts', 'businesses', 'contracts', 'plans', 'receivables', 'followup', 'log'].includes(activeTab.value)) // 关系列表/跟进 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:customer:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:customer:delete']))
 const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
@@ -239,7 +239,7 @@ const hasFooter = computed(() => {
     case 'followup':
       return true
     case 'team':
-      return true
+      return teamCanQuit.value || validateOwnerUser.value
     default:
       return canRelatedAdd.value
   }

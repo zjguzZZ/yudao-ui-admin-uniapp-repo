@@ -83,7 +83,7 @@
     </template>
 
     <!-- 跟进记录 -->
-    <CrmFollowupRecords v-else-if="activeTab === 'followup' && contractId" ref="followupRef" embedded :biz-id="contractId" :biz-type="bizType" />
+    <CrmFollowupRecords v-else-if="activeTab === 'followup' && contractId" ref="followupRef" class="min-h-0 flex-1" embedded :biz-id="contractId" :biz-type="bizType" />
 
     <!-- 回款计划 -->
     <ReceivablePlanList v-else-if="activeTab === 'plans' && contractId" ref="listRef" class="min-h-0 flex-1" :customer-id="formData.customerId" :contract-id="contractId" />
@@ -92,7 +92,7 @@
     <ReceivableList v-else-if="activeTab === 'receivables' && contractId" ref="listRef" class="min-h-0 flex-1" :customer-id="formData.customerId" :contract-id="contractId" />
 
     <!-- 操作日志 -->
-    <CrmOperateLogs v-else-if="activeTab === 'log' && contractId" :biz-id="contractId" :biz-type="bizType" />
+    <CrmOperateLogs v-else-if="activeTab === 'log' && contractId" class="min-h-0 flex-1" :biz-id="contractId" :biz-type="bizType" />
 
     <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
     <CrmPermissionTeam
@@ -127,7 +127,7 @@
           <wd-button v-if="teamCanQuit" class="flex-1" type="danger" variant="plain" @click="teamRef?.quit()">
             退出团队
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="teamRef?.openAdd()">
+          <wd-button v-if="validateOwnerUser" class="flex-1" type="primary" @click="teamRef?.openAdd()">
             新增成员
           </wd-button>
         </template>
@@ -203,7 +203,7 @@ const contractId = computed(() => Number(props.id))
 const products = computed<Record<string, any>[]>(() => Array.isArray(formData.value.products) ? formData.value.products : [])
 const totalProductPrice = computed(() => products.value.reduce((sum, row) => sum + Number(row.totalPrice || 0), 0)) // 产品总金额
 const activeTab = computed(() => tabs[tabIndex.value].key)
-const isPagingTab = computed(() => ['plans', 'receivables'].includes(activeTab.value)) // 关系列表 tab 用 z-paging 固定高布局
+const isPagingTab = computed(() => ['plans', 'receivables', 'followup', 'log'].includes(activeTab.value)) // 关系列表/跟进 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:contract:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:contract:delete']))
 const isDraft = computed(() => Number(formData.value.auditStatus) === CrmAuditStatusEnum.DRAFT) // 未提交（草稿）
@@ -221,10 +221,12 @@ const moreActions = computed(() => {
   if (validateOwnerUser.value) {
     actions.push({ name: '转移', value: 'transfer' })
   }
-  if (isDraft.value) {
-    actions.push({ name: '提交审核', value: 'submit' })
-  } else {
-    actions.push({ name: '查看审批', value: 'viewProcess' })
+  if (canUpdate.value) {
+    if (isDraft.value) {
+      actions.push({ name: '提交审核', value: 'submit' })
+    } else {
+      actions.push({ name: '查看审批', value: 'viewProcess' })
+    }
   }
   return actions
 })
@@ -237,7 +239,7 @@ const hasFooter = computed(() => {
     case 'followup':
       return true
     case 'team':
-      return true
+      return teamCanQuit.value || validateOwnerUser.value
     case 'plans':
       return canCreatePlan.value
     case 'receivables':

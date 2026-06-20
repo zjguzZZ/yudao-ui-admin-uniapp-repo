@@ -66,6 +66,7 @@ import type { ReceivablePlan } from '@/api/crm/receivable/plan'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { getReceivablePlanPage } from '@/api/crm/receivable/plan'
+import { CRM_SCENE_TYPES, CrmSceneTypeEnum } from '@/api/crm/permission'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -79,10 +80,7 @@ definePage({
   },
 })
 
-const sceneTabs = [
-  { label: '我负责的', value: 1 },
-  { label: '下属负责的', value: 3 },
-]
+const sceneTabs = CRM_SCENE_TYPES.filter(item => item.value !== CrmSceneTypeEnum.INVOLVED)
 
 const { hasAccessByCodes } = useAccess()
 const list = ref<ReceivablePlan[]>([]) // 列表数据

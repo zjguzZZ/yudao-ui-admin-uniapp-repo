@@ -165,7 +165,6 @@ defineExpose({
   reload,
   getList: reload,
   openAdd,
-  openRelate: handleAddBusinessContact,
 })
 
 /** 初始化 */

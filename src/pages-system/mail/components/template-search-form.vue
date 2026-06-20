@@ -50,26 +50,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          邮箱账号
-        </view>
-        <view
-          class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-          @click="pickerVisible.accountId = true"
-        >
-          <text class="text-28rpx text-[#333]">
-            {{ getWotPickerDisplay(accountOptions, formData.accountId, { placeholder: '请选择邮箱账号' }) }}
-          </text>
-          <wd-icon name="arrow-down" size="32rpx" color="#666" />
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.accountId"
-          :model-value="formData.accountId"
-          :columns="accountOptions"
-          @confirm="({ value }) => formData.accountId = value[0]"
-        />
-      </view>
+      <yd-search-picker v-model="formData.accountId" label="邮箱账号" :columns="accountOptions" placeholder="请选择邮箱账号" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           创建时间
@@ -125,7 +106,6 @@ import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -140,7 +120,6 @@ const formData = reactive({
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 const visible = ref(false) // 搜索弹窗显示状态
-const pickerVisible = ref<Record<string, boolean>>({})
 
 /** 邮箱账号列表 */
 const accountList = ref<{ id?: number, mail: string }[]>([])

@@ -56,6 +56,11 @@ export function getContactPageByCustomer(params: PageParam) {
   return http.get<PageResult<Contact>>('/crm/contact/page-by-customer', params)
 }
 
+/** 查询指定客户下的联系人列表（不分页） */
+export function getContactListByCustomer(customerId: number) {
+  return http.get<Contact[]>(`/crm/contact/list-by-customer?customerId=${customerId}`)
+}
+
 /** 查询指定商机下的联系人分页列表 */
 export function getContactPageByBusiness(params: PageParam) {
   return http.get<PageResult<Contact>>('/crm/contact/page-by-business', params)

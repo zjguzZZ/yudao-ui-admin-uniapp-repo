@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container" :class="{ 'yd-page-container-paging': isPagingTab }">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="线索详情"
@@ -42,15 +42,18 @@
       <wd-cell title="最后跟进内容" :value="formData.contactLastContent || '-'" />
       <wd-cell title="备注" :value="formData.remark || '-'" />
       <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
-      <wd-cell title="转化状态" :value="formData.transformStatus ? '是' : '否'" />
+      <wd-cell title="转化状态">
+        <dict-tag v-if="formData.transformStatus != null && formData.transformStatus !== ''" :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="formData.transformStatus" />
+        <text v-else>-</text>
+      </wd-cell>
       <wd-cell title="转化客户" :value="formData.customerName || '-'" />
     </wd-cell-group>
 
     <!-- 跟进记录 -->
-    <CrmFollowupRecords v-else-if="activeTab === 'followup' && clueId" ref="followupRef" embedded :biz-id="clueId" :biz-type="bizType" />
+    <CrmFollowupRecords v-else-if="activeTab === 'followup' && clueId" ref="followupRef" class="min-h-0 flex-1" embedded :biz-id="clueId" :biz-type="bizType" />
 
     <!-- 操作日志 -->
-    <CrmOperateLogs v-else-if="activeTab === 'log' && clueId" :biz-id="clueId" :biz-type="bizType" />
+    <CrmOperateLogs v-else-if="activeTab === 'log' && clueId" class="min-h-0 flex-1" :biz-id="clueId" :biz-type="bizType" />
 
     <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
     <CrmPermissionTeam
@@ -85,7 +88,7 @@
           <wd-button v-if="teamCanQuit" class="flex-1" type="danger" variant="plain" @click="teamRef?.quit()">
             退出团队
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="teamRef?.openAdd()">
+          <wd-button v-if="validateOwnerUser" class="flex-1" type="primary" @click="teamRef?.openAdd()">
             新增成员
           </wd-button>
         </template>
@@ -145,6 +148,7 @@ const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: bool
 const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表单引用
 const clueId = computed(() => Number(props.id))
 const activeTab = computed(() => tabs[tabIndex.value].key)
+const isPagingTab = computed(() => ['followup', 'log'].includes(activeTab.value)) // 跟进/操作日志 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:clue:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:clue:delete']))
 const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
@@ -174,7 +178,7 @@ const hasFooter = computed(() => {
     case 'followup':
       return true
     case 'team':
-      return true
+      return teamCanQuit.value || validateOwnerUser.value
     default:
       return false
   }

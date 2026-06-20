@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container" :class="{ 'yd-page-container-paging': isPagingTab }">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="联系人详情"
@@ -44,13 +44,13 @@
     </wd-cell-group>
 
     <!-- 跟进记录 -->
-    <CrmFollowupRecords v-else-if="activeTab === 'followup' && contactId" ref="followupRef" embedded :biz-id="contactId" :biz-type="bizType" />
+    <CrmFollowupRecords v-else-if="activeTab === 'followup' && contactId" ref="followupRef" class="min-h-0 flex-1" embedded :biz-id="contactId" :biz-type="bizType" />
 
     <!-- 关联商机 -->
     <ContactBusiness v-else-if="activeTab === 'businesses' && contactId" :contact-id="contactId" :customer-id="formData.customerId" />
 
     <!-- 操作日志 -->
-    <CrmOperateLogs v-else-if="activeTab === 'log' && contactId" :biz-id="contactId" :biz-type="bizType" />
+    <CrmOperateLogs v-else-if="activeTab === 'log' && contactId" class="min-h-0 flex-1" :biz-id="contactId" :biz-type="bizType" />
 
     <!-- 团队成员（常驻挂载：底部业务操作需读取其权限校验） -->
     <CrmPermissionTeam
@@ -85,7 +85,7 @@
           <wd-button v-if="teamCanQuit" class="flex-1" type="danger" variant="plain" @click="teamRef?.quit()">
             退出团队
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="teamRef?.openAdd()">
+          <wd-button v-if="validateOwnerUser" class="flex-1" type="primary" @click="teamRef?.openAdd()">
             新增成员
           </wd-button>
         </template>
@@ -148,6 +148,7 @@ const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表
 const contactId = computed(() => Number(props.id))
 const activeTabConfig = computed(() => tabs[tabIndex.value])
 const activeTab = computed(() => activeTabConfig.value.key)
+const isPagingTab = computed(() => ['followup', 'log'].includes(activeTab.value)) // 跟进/操作日志 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:contact:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:contact:delete']))
 const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）
@@ -171,7 +172,7 @@ const hasFooter = computed(() => {
     case 'followup':
       return true
     case 'team':
-      return true
+      return teamCanQuit.value || validateOwnerUser.value
     default:
       return false
   }

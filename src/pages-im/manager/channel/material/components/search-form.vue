@@ -13,28 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          所属频道
-        </view>
-        <view
-          class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-          @click="channelVisible = true"
-        >
-          <text class="text-28rpx text-[#333]">
-            {{ getWotPickerDisplay(channelColumns, formData.channelId, { valueKey: 'value', labelKey: 'label', placeholder: '全部' }) }}
-          </text>
-          <wd-icon name="arrow-down" size="32rpx" color="#666" />
-        </view>
-        <wd-picker
-          v-model:visible="channelVisible"
-          :model-value="formData.channelId"
-          :columns="channelColumns"
-          label-key="label"
-          value-key="value"
-          @confirm="({ value }) => formData.channelId = Number(value[0])"
-        />
-      </view>
+      <yd-search-picker v-model="formData.channelId" label="所属频道" :columns="channelColumns" :all-value="0" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           标题
@@ -65,7 +44,6 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const channelVisible = ref(false) // 频道选择器显示状态
 const channelColumns = ref<{ label: string, value: number }[]>([{ label: '全部', value: 0 }]) // 频道选项（0 表示全部）
 const formData = reactive({
   channelId: 0, // 0 表示全部

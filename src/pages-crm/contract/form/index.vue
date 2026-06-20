@@ -132,7 +132,7 @@ const formSchema = createFormSchema({
   customerId: [{ required: true, message: '客户名称不能为空' }],
   ownerUserId: [{ required: true, message: '负责人不能为空' }],
   orderDate: [{ required: true, message: '下单日期不能为空' }],
-  discountPercent: [{ validator: value => value == null || value === '' || (Number(value) >= 0 && Number(value) <= 100) || '整单折扣需在 0-100 之间' }],
+  discountPercent: [{ min: 0, max: 100, message: '整单折扣需在 0-100 之间' }],
 })
 
 /** 返回上一页 */

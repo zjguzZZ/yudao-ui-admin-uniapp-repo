@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container" :class="{ 'yd-page-container-paging': isPagingTab }">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="产品详情"
@@ -32,7 +32,7 @@
     </wd-cell-group>
 
     <!-- 操作日志 -->
-    <CrmOperateLogs v-else-if="activeTab === 'log' && productId" :biz-id="productId" :biz-type="bizType" />
+    <CrmOperateLogs v-else-if="activeTab === 'log' && productId" class="min-h-0 flex-1" :biz-id="productId" :biz-type="bizType" />
 
     <!-- 底部操作（按 tab 区分，只放当前模块的操作） -->
     <view v-if="hasFooter" class="yd-detail-footer">
@@ -83,6 +83,7 @@ const tabIndex = ref(0) // 当前详情分类下标
 const deleting = ref(false) // 删除状态
 const productId = computed(() => Number(props.id))
 const activeTab = computed(() => tabs[tabIndex.value].key)
+const isPagingTab = computed(() => activeTab.value === 'log') // 操作日志 tab 用 z-paging 固定高布局
 const canUpdate = computed(() => hasAccessByCodes(['crm:product:update']))
 const canDelete = computed(() => hasAccessByCodes(['crm:product:delete']))
 const hasFooter = computed(() => {

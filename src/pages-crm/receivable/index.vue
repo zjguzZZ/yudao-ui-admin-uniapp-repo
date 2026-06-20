@@ -45,7 +45,7 @@
             <text class="mr-8rpx text-[#999]">客户：</text>{{ item.customerName }}
           </view>
           <view v-if="item.price !== undefined && item.price !== null" class="mb-12rpx text-28rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">金额：</text>{{ Number(item.price).toFixed(2) }}
+            <text class="mr-8rpx text-[#999]">金额：</text>{{ formatMoney(item.price) }}
           </view>
           <view v-if="item.returnTime" class="text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">日期：</text>{{ formatDate(item.returnTime) }}
@@ -69,6 +69,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
+import { formatMoney } from '@/utils/format'
 import SearchForm from './components/search-form.vue'
 
 definePage({

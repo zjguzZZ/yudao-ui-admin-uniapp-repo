@@ -28,7 +28,7 @@
             <text class="mr-8rpx text-[#999]">客户：</text>{{ item.customerName }}
           </view>
           <view v-if="item.totalPrice != null" class="text-28rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">金额：</text>{{ Number(item.totalPrice).toFixed(2) }}
+            <text class="mr-8rpx text-[#999]">金额：</text>{{ formatMoney(item.totalPrice) }}
           </view>
         </view>
       </view>
@@ -40,6 +40,7 @@
 import { ref } from 'vue'
 import { getContractPage } from '@/api/crm/contract'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatMoney } from '@/utils/format'
 import BacklogFilter from './backlog-filter.vue'
 import { AUDIT_STATUS, buildDefaultFilters } from './common'
 

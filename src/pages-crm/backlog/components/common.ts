@@ -28,7 +28,6 @@ export const FOLLOWUP_STATUS: BacklogFilterOption[] = [
   { label: '已跟进', value: true },
 ]
 
-// TODO @AI：有没全局的 enum 可以复用。
 /** 审批状态 */
 export const AUDIT_STATUS: BacklogFilterOption[] = [
   { label: '待审批', value: 10 },

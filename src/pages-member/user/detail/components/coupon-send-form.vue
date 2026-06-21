@@ -38,7 +38,7 @@
         </view>
         <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无可发送优惠券" />
         <view v-if="hasMore" class="pb-24rpx">
-          <wd-button block plain :loading="loading" @click="loadMore">
+          <wd-button plain block :loading="loading" @click="loadMore">
             加载更多
           </wd-button>
         </view>
@@ -63,7 +63,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  success: []
+  'success': []
 }>()
 
 const toast = useToast()

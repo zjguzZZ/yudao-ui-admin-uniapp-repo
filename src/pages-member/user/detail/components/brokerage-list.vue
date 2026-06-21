@@ -1,6 +1,7 @@
 <template>
   <scroll-view scroll-y class="min-h-520rpx">
     <view class="p-24rpx">
+      <!-- TODO @AI：改成类似 components 其他的 search-form，顶部点出来！（风格一致！） -->
       <view class="mb-20rpx rounded-12rpx bg-white p-16rpx">
         <wd-radio-group v-model="level" type="button" @change="handleLevelChange">
           <wd-radio value="">

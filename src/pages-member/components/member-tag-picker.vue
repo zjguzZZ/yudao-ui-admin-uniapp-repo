@@ -1,3 +1,4 @@
+<!-- TODO @AI：融合到 tag 里？类似别的模块 -->
 <template>
   <wd-form-item
     v-if="label || prop"

@@ -14,6 +14,7 @@
           <wd-form-item title="积分抵扣" title-width="220rpx" prop="pointTradeDeductEnable" center>
             <wd-switch v-model="formData.pointTradeDeductEnable" />
           </wd-form-item>
+          <!-- TODO @AI：莫斯不能点加号 -->
           <wd-form-item title="抵扣金额" title-width="220rpx" prop="pointTradeDeductUnitPrice">
             <wd-input-number v-model="deductUnitPriceYuan" :min="0" :step="0.01" />
           </wd-form-item>
@@ -25,7 +26,7 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <view class="p-24rpx text-24rpx leading-40rpx text-[#999]">
+      <view class="p-24rpx text-24rpx text-[#999] leading-40rpx">
         抵扣金额单位为元，表示 1 积分可抵扣多少金额；抵扣上限为 0 时不限制；赠送积分表示实际支付 1 元赠送多少积分。
       </view>
     </view>

@@ -25,6 +25,7 @@ export interface MenuGroup {
 }
 
 /** 菜单分组原始数据 */
+// TODO @AI：member 按照会员配置、会员用户、会员标签、会员等级、会员分组、会员积分、签到配置、签到记录；这样的名字和顺序；
 const menuGroupsData: MenuGroup[] = [
   {
     key: 'system',

@@ -14,42 +14,7 @@
   >
     <view class="yd-search-form-container">
       <yd-search-picker v-model="formData.channelId" label="所属频道" :columns="channelColumns" :all-value="0" />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发送时间
-        </view>
-        <view class="yd-search-form-date-range-container">
-          <view class="flex-1" @click="visibleSendTime[0] = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.sendTime?.[0]) || '开始日期' }}
-            </view>
-          </view>
-          -
-          <view class="flex-1" @click="visibleSendTime[1] = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.sendTime?.[1]) || '结束日期' }}
-            </view>
-          </view>
-        </view>
-        <wd-datetime-picker-view v-if="visibleSendTime[0]" v-model="tempSendTime[0]" type="date" />
-        <view v-if="visibleSendTime[0]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" variant="plain" @click="visibleSendTime[0] = false">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleSendTime0Confirm">
-            确定
-          </wd-button>
-        </view>
-        <wd-datetime-picker-view v-if="visibleSendTime[1]" v-model="tempSendTime[1]" type="date" />
-        <view v-if="visibleSendTime[1]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" variant="plain" @click="visibleSendTime[1] = false">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleSendTime1Confirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
+      <yd-search-date-range v-model="formData.sendTime" label="发送时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -81,9 +46,6 @@ const formData = reactive({
   sendTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
-const visibleSendTime = ref<[boolean, boolean]>([false, false]) // 发送时间选择器状态
-const tempSendTime = ref<[number, number]>([Date.now(), Date.now()]) // 发送时间临时值
-
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
@@ -103,18 +65,6 @@ async function loadChannelOptions() {
     { label: '全部', value: 0 },
     ...list.map(item => ({ label: item.name, value: item.id })),
   ]
-}
-
-/** 确认发送时间开始日期 */
-function handleSendTime0Confirm() {
-  formData.sendTime = [tempSendTime.value[0], formData.sendTime?.[1]]
-  visibleSendTime.value[0] = false
-}
-
-/** 确认发送时间结束日期 */
-function handleSendTime1Confirm() {
-  formData.sendTime = [formData.sendTime?.[0], tempSendTime.value[1]]
-  visibleSendTime.value[1] = false
 }
 
 /** 搜索按钮操作 */

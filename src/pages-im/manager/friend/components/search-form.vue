@@ -58,42 +58,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          添加时间
-        </view>
-        <view class="yd-search-form-date-range-container">
-          <view class="flex-1" @click="visibleAddTime[0] = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.addTime?.[0]) || '开始日期' }}
-            </view>
-          </view>
-          -
-          <view class="flex-1" @click="visibleAddTime[1] = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.addTime?.[1]) || '结束日期' }}
-            </view>
-          </view>
-        </view>
-        <wd-datetime-picker-view v-if="visibleAddTime[0]" v-model="tempAddTime[0]" type="date" />
-        <view v-if="visibleAddTime[0]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" variant="plain" @click="visibleAddTime[0] = false">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleAddTime0Confirm">
-            确定
-          </wd-button>
-        </view>
-        <wd-datetime-picker-view v-if="visibleAddTime[1]" v-model="tempAddTime[1]" type="date" />
-        <view v-if="visibleAddTime[1]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" variant="plain" @click="visibleAddTime[1] = false">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleAddTime1Confirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
+      <yd-search-date-range v-model="formData.addTime" label="添加时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -130,9 +95,6 @@ const formData = reactive({
   addTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
-const visibleAddTime = ref<[boolean, boolean]>([false, false]) // 添加时间选择器状态
-const tempAddTime = ref<[number, number]>([Date.now(), Date.now()]) // 添加时间临时值
-
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
@@ -153,18 +115,6 @@ const placeholder = computed(() => {
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索好友关系'
 })
-
-/** 确认添加时间开始日期 */
-function handleAddTime0Confirm() {
-  formData.addTime = [tempAddTime.value[0], formData.addTime?.[1]]
-  visibleAddTime.value[0] = false
-}
-
-/** 确认添加时间结束日期 */
-function handleAddTime1Confirm() {
-  formData.addTime = [formData.addTime?.[0], tempAddTime.value[1]]
-  visibleAddTime.value[1] = false
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {

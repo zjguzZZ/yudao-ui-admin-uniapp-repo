@@ -13,72 +13,53 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view v-for="field in searchFields" :key="field.prop" class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          {{ field.label }}
-        </view>
-        <template v-if="field.type === 'status' || field.type === 'audit-status' || field.type === 'dict'">
-          <wd-radio-group v-model="formData[field.prop]" type="button">
-            <wd-radio :value="-1">全部</wd-radio>
-            <wd-radio
-              v-for="dict in getIntDictOptions(getFieldDictType(field))"
-              :key="dict.value"
-              :value="dict.value"
-            >
-              {{ dict.label }}
-            </wd-radio>
-          </wd-radio-group>
-        </template>
-        <template v-else-if="field.type === 'picker'">
-          <wd-form-item
-            :value="getPickerText(field, formData[field.prop], optionsMap)"
-            placeholder="请选择"
-            is-link
-            @click="pickerVisible[field.prop] = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible[field.prop]"
-            :model-value="formData[field.prop]"
-            :columns="getPickerOptions(field)"
-            label-key="name"
-            value-key="id"
-            @confirm="({ value }) => formData[field.prop] = value[0]"
-          />
-        </template>
-        <template v-else-if="isDateField(field)">
-          <view class="yd-search-form-date-range-container">
-            <view class="flex-1" @click="dateVisible[field.prop + ':start'] = true">
-              <view class="yd-search-form-date-range-picker">
-                {{ formatDate(formData[field.prop]?.[0]) || '开始日期' }}
-              </view>
-            </view>
-            -
-            <view class="flex-1" @click="dateVisible[field.prop + ':end'] = true">
-              <view class="yd-search-form-date-range-picker">
-                {{ formatDate(formData[field.prop]?.[1]) || '结束日期' }}
-              </view>
-            </view>
-          </view>
-          <wd-datetime-picker
-            v-model="formData[field.prop][0]"
-            v-model:visible="dateVisible[field.prop + ':start']"
-            title="请选择开始日期"
-            type="date"
-          />
-          <wd-datetime-picker
-            v-model="formData[field.prop][1]"
-            v-model:visible="dateVisible[field.prop + ':end']"
-            title="请选择结束日期"
-            type="date"
-          />
-        </template>
-        <wd-input
-          v-else
+      <template v-for="field in searchFields" :key="field.prop">
+        <!-- 日期范围：组件自带搜索项容器与标签 -->
+        <yd-search-date-range
+          v-if="isDateField(field)"
           v-model="formData[field.prop]"
-          :placeholder="'请输入' + field.label"
-          clearable
+          :label="field.label"
         />
-      </view>
+        <view v-else class="yd-search-form-item">
+          <view class="yd-search-form-label">
+            {{ field.label }}
+          </view>
+          <template v-if="field.type === 'status' || field.type === 'audit-status' || field.type === 'dict'">
+            <wd-radio-group v-model="formData[field.prop]" type="button">
+              <wd-radio :value="-1">全部</wd-radio>
+              <wd-radio
+                v-for="dict in getIntDictOptions(getFieldDictType(field))"
+                :key="dict.value"
+                :value="dict.value"
+              >
+                {{ dict.label }}
+              </wd-radio>
+            </wd-radio-group>
+          </template>
+          <template v-else-if="field.type === 'picker'">
+            <wd-form-item
+              :value="getPickerText(field, formData[field.prop], optionsMap)"
+              placeholder="请选择"
+              is-link
+              @click="pickerVisible[field.prop] = true"
+            />
+            <wd-picker
+              v-model:visible="pickerVisible[field.prop]"
+              :model-value="formData[field.prop]"
+              :columns="getPickerOptions(field)"
+              label-key="name"
+              value-key="id"
+              @confirm="({ value }) => formData[field.prop] = value[0]"
+            />
+          </template>
+          <wd-input
+            v-else
+            v-model="formData[field.prop]"
+            :placeholder="'请输入' + field.label"
+            clearable
+          />
+        </view>
+      </template>
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -113,7 +94,6 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({}) // 搜索表单数据
 const pickerVisible = reactive<Record<string, boolean>>({}) // 选择器状态
-const dateVisible = reactive<Record<string, boolean>>({}) // 日期选择器状态
 const searchFields = computed(() => getSearchFields(props.module))
 const optionsMap = computed(() => props.optionsMap)
 

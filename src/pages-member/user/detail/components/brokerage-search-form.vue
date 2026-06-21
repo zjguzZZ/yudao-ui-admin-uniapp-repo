@@ -27,7 +27,7 @@
           @confirm="({ value }) => formData.level = value[0]"
         />
       </view>
-      <DateRangeField v-model="formData.bindUserTime" label="绑定时间" />
+      <yd-search-date-range v-model="formData.bindUserTime" label="绑定时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -42,7 +42,6 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import DateRangeField from '@/pages-member/components/date-range-field.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
 import { getWotPickerDisplay } from '@/utils/wot'

@@ -25,26 +25,7 @@
         </view>
         <CrmPicker v-model="formData.customerId" source="customer" placeholder="请选择客户名称" @confirm="handleCustomerConfirm" />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          下单日期
-        </view>
-        <view class="yd-search-form-date-range-container">
-          <view class="flex-1" @click="dateVisible.orderDateStart = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.orderDate[0]) || '开始日期' }}
-            </view>
-          </view>
-          -
-          <view class="flex-1" @click="dateVisible.orderDateEnd = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.orderDate[1]) || '结束日期' }}
-            </view>
-          </view>
-        </view>
-        <wd-datetime-picker v-model="formData.orderDate[0]" v-model:visible="dateVisible.orderDateStart" title="请选择开始日期" type="date" />
-        <wd-datetime-picker v-model="formData.orderDate[1]" v-model:visible="dateVisible.orderDateEnd" title="请选择结束日期" type="date" />
-      </view>
+      <yd-search-date-range v-model="formData.orderDate" label="下单日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -66,7 +47,6 @@ import CrmPicker from '@/pages-crm/components/crm-picker.vue'
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const dateVisible = reactive<Record<string, boolean>>({}) // 日期选择器显示状态
 const formData = reactive<Record<string, any>>({
   no: undefined,
   name: undefined,

@@ -87,42 +87,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发起时间
-        </view>
-        <view class="yd-search-form-date-range-container">
-          <view class="flex-1" @click="visibleStartTime[0] = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.startTime?.[0]) || '开始日期' }}
-            </view>
-          </view>
-          -
-          <view class="flex-1" @click="visibleStartTime[1] = true">
-            <view class="yd-search-form-date-range-picker">
-              {{ formatDate(formData.startTime?.[1]) || '结束日期' }}
-            </view>
-          </view>
-        </view>
-        <wd-datetime-picker-view v-if="visibleStartTime[0]" v-model="tempStartTime[0]" type="date" />
-        <view v-if="visibleStartTime[0]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" variant="plain" @click="visibleStartTime[0] = false">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleStartTime0Confirm">
-            确定
-          </wd-button>
-        </view>
-        <wd-datetime-picker-view v-if="visibleStartTime[1]" v-model="tempStartTime[1]" type="date" />
-        <view v-if="visibleStartTime[1]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" variant="plain" @click="visibleStartTime[1] = false">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleStartTime1Confirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
+      <yd-search-date-range v-model="formData.startTime" label="发起时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -159,9 +124,6 @@ const formData = reactive({
   startTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
-const visibleStartTime = ref<[boolean, boolean]>([false, false]) // 发起时间选择器状态
-const tempStartTime = ref<[number, number]>([Date.now(), Date.now()]) // 发起时间临时值
-
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
@@ -185,18 +147,6 @@ const placeholder = computed(() => {
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索通话记录'
 })
-
-/** 确认发起时间开始日期 */
-function handleStartTime0Confirm() {
-  formData.startTime = [tempStartTime.value[0], formData.startTime?.[1]]
-  visibleStartTime.value[0] = false
-}
-
-/** 确认发起时间结束日期 */
-function handleStartTime1Confirm() {
-  formData.startTime = [formData.startTime?.[0], tempStartTime.value[1]]
-  visibleStartTime.value[1] = false
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
